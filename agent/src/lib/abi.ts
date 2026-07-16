@@ -64,6 +64,42 @@ export const factoryAbi = [
   },
 ] as const;
 
+export const identityRegistryAbi = [
+  {
+    type: "function",
+    name: "register",
+    inputs: [],
+    outputs: [{ type: "uint256", name: "agentId" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setAgentURI",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "newURI", type: "string" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "getAgentWallet",
+    inputs: [{ name: "agentId", type: "uint256" }],
+    outputs: [{ type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "Registered",
+    inputs: [
+      { name: "agentId", type: "uint256", indexed: true },
+      { name: "agentURI", type: "string", indexed: false },
+      { name: "owner", type: "address", indexed: true },
+    ],
+  },
+] as const;
+
 export const erc20Abi = [
   {
     type: "function",
