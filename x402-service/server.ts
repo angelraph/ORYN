@@ -6,18 +6,33 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 
 const PORT = process.env.X402_PORT ?? 4021;
 const PAY_TO = process.env.X402_SELLER_PAYOUT_ADDRESS as `0x${string}` | undefined;
-const FACILITATOR_URL = process.env.X402_FACILITATOR_URL ?? "https://x402.celo.org";
+const FACILITATOR_URL = process.env.X402_FACILITATOR_URL ?? "https://api.x402.celo.org";
 const USDC_ADDRESS = process.env.USDC_ADDRESS ?? "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
 const CELO_NETWORK = "eip155:42220"; // CAIP-2 id for Celo mainnet (chain 42220)
+const X402_API_KEY = process.env.X402_API_KEY;
 
 if (!PAY_TO) {
   throw new Error("X402_SELLER_PAYOUT_ADDRESS is not set in .env");
+}
+if (!X402_API_KEY) {
+  throw new Error(
+    "X402_API_KEY is not set in .env — get one at https://x402.celo.org (connect wallet -> Create API key)",
+  );
 }
 
 const app = express();
 app.use(express.json());
 
-const facilitatorClient = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
+// The facilitator meters verify/settle/supported by X-API-Key. Without this,
+// /settle rejects with 401 "Missing X-API-Key" — verified against Celo's own
+// reference implementation (celo-org/x402-celo-example-deprecated).
+const facilitatorClient = new HTTPFacilitatorClient({
+  url: FACILITATOR_URL,
+  createAuthHeaders: async () => {
+    const headers = { "X-API-Key": X402_API_KEY! };
+    return { verify: headers, settle: headers, supported: headers };
+  },
+});
 const resourceServer = new x402ResourceServer(facilitatorClient).register(CELO_NETWORK, new ExactEvmScheme());
 
 // A real, small paid service: ORYN's own bookkeeping/categorization step. Every
