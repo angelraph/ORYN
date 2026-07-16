@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["agent/**/*.ts", "x402-service/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "hardhat.config.ts"]
+}

@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+cache/
+artifacts/
+typechain-types/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+coverage.json
+
+# Claude Code / local agent tooling — not part of the product
+.claude/
+.agents/
+skills/
+skills-lock.json
