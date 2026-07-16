@@ -3,6 +3,7 @@ import { vaultAbi } from "./lib/abi.js";
 import { sendTaggedTransaction } from "./lib/attribution.js";
 import { publicClient } from "./lib/celoClient.js";
 import { errMsg } from "./lib/errors.js";
+import { enqueueRetry } from "./lib/x402RetryQueue.js";
 import { categorizeDistribution } from "../../x402-service/client.js";
 
 /**
@@ -36,7 +37,12 @@ export async function distributeVault(vaultAddress: `0x${string}`) {
       });
       console.log(`[executor] categorized payout to ${event.args.recipient}: ${result.category}`);
     } catch (err) {
-      console.error(`[executor] x402 categorization failed for ${event.args.recipient}: ${errMsg(err)}`);
+      console.error(`[executor] x402 categorization failed for ${event.args.recipient}: ${errMsg(err)} — queuing for retry`);
+      enqueueRetry({
+        vault: vaultAddress,
+        recipient: event.args.recipient,
+        amount: event.args.amount.toString(),
+      });
     }
   }
 

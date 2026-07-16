@@ -16,3 +16,4 @@ coverage.json
 .agents/
 skills/
 skills-lock.json
+data/*.json

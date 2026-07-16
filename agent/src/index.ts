@@ -1,4 +1,5 @@
 import { runWatcher } from "./watcher.js";
+import { startRetryLoop } from "./lib/x402RetryQueue.js";
 import { errMsg } from "./lib/errors.js";
 
 // Log-and-exit rather than continue in a possibly-corrupted state; run-forever.ts
@@ -12,6 +13,8 @@ process.on("unhandledRejection", (err) => {
   console.error(`[agent] unhandled rejection: ${errMsg(err)}`);
   process.exit(1);
 });
+
+startRetryLoop();
 
 runWatcher().catch((err) => {
   console.error(`[agent] fatal error: ${errMsg(err)}`);
