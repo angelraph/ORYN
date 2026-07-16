@@ -2,6 +2,7 @@ import { encodeFunctionData, parseEventLogs } from "viem";
 import { vaultAbi } from "./lib/abi.js";
 import { sendTaggedTransaction } from "./lib/attribution.js";
 import { publicClient } from "./lib/celoClient.js";
+import { errMsg } from "./lib/errors.js";
 import { categorizeDistribution } from "../../x402-service/client.js";
 
 /**
@@ -35,7 +36,7 @@ export async function distributeVault(vaultAddress: `0x${string}`) {
       });
       console.log(`[executor] categorized payout to ${event.args.recipient}: ${result.category}`);
     } catch (err) {
-      console.error(`[executor] x402 categorization failed for ${event.args.recipient}:`, err);
+      console.error(`[executor] x402 categorization failed for ${event.args.recipient}: ${errMsg(err)}`);
     }
   }
 

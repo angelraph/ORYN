@@ -2,6 +2,7 @@ import "dotenv/config";
 import { publicClient } from "./lib/celoClient.js";
 import { factoryAbi, vaultAbi } from "./lib/abi.js";
 import { distributeVault } from "./executor.js";
+import { errMsg } from "./lib/errors.js";
 
 const FACTORY_ADDRESS = process.env.VAULT_FACTORY_ADDRESS as `0x${string}` | undefined;
 const FACTORY_DEPLOY_BLOCK = process.env.VAULT_FACTORY_DEPLOY_BLOCK
@@ -66,10 +67,24 @@ async function checkDeposits(fromBlock: bigint, toBlock: bigint) {
     for (const log of logs) {
       const vault = log.address as `0x${string}`;
       console.log(`[watcher] deposit detected on ${vault}: from ${log.args.from}, amount ${log.args.amount}`);
+
+      // The full-history rescan on every restart will re-see already-processed
+      // deposits. Check pendingBalance first so those don't cost a pointless,
+      // reverting transaction every time the agent restarts.
+      const pending = await publicClient.readContract({
+        address: vault,
+        abi: vaultAbi,
+        functionName: "pendingBalance",
+      });
+      if (pending === 0n) {
+        console.log(`[watcher] ${vault} already distributed, skipping`);
+        continue;
+      }
+
       try {
         await distributeVault(vault);
       } catch (err) {
-        console.error(`[watcher] failed to distribute ${vault}:`, err);
+        console.error(`[watcher] failed to distribute ${vault}: ${errMsg(err)}`);
       }
     }
   });
@@ -89,18 +104,25 @@ export async function runWatcher() {
   let lastBlock = currentBlock;
   console.log(`[watcher] caught up, ${knownVaults.size} vault(s) known, polling every ${POLL_INTERVAL_MS}ms`);
 
-  setInterval(async () => {
+  // A self-scheduling loop (not setInterval) so a slow RPC call can never overlap
+  // with the next tick — that overlap previously caused distribute() to be called
+  // twice for the same deposit (the second call safely reverted on-chain, but it's
+  // wasted gas and log noise worth closing off structurally).
+  async function poll() {
     try {
       const latest = await publicClient.getBlockNumber();
-      if (latest <= lastBlock) return;
-
-      const fromBlock = lastBlock + 1n;
-      await discoverVaults(fromBlock, latest);
-      await checkDeposits(fromBlock, latest);
-
-      lastBlock = latest;
+      if (latest > lastBlock) {
+        const fromBlock = lastBlock + 1n;
+        await discoverVaults(fromBlock, latest);
+        await checkDeposits(fromBlock, latest);
+        lastBlock = latest;
+      }
     } catch (err) {
-      console.error("[watcher] poll error:", err);
+      console.error(`[watcher] poll error: ${errMsg(err)}`);
+    } finally {
+      setTimeout(poll, POLL_INTERVAL_MS);
     }
-  }, POLL_INTERVAL_MS);
+  }
+
+  setTimeout(poll, POLL_INTERVAL_MS);
 }

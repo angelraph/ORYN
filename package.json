@@ -9,6 +9,7 @@
     "test": "hardhat test",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network celo",
     "agent": "tsx agent/src/index.ts",
+    "agent:forever": "tsx agent/src/run-forever.ts",
     "x402:serve": "tsx x402-service/server.ts"
   },
   "dependencies": {
