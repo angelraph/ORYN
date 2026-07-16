@@ -54,6 +54,24 @@ export const factoryAbi = [
     stateMutability: "view",
   },
   {
+    type: "function",
+    name: "vaultOf",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "createVaultFor",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "token", type: "address" },
+      { name: "agent", type: "address" },
+    ],
+    outputs: [{ type: "address", name: "vault" }],
+    stateMutability: "nonpayable",
+  },
+  {
     type: "event",
     name: "VaultCreated",
     inputs: [

@@ -15,15 +15,27 @@ contract OrynVaultFactory {
     error VaultAlreadyExists();
 
     function createVault(address token, address agent) external returns (address vault) {
-        if (vaultOf[msg.sender] != address(0)) revert VaultAlreadyExists();
+        return _createVault(msg.sender, token, agent);
+    }
 
-        OrynVault v = new OrynVault(msg.sender, token, agent);
+    /// @notice Lets ORYN provision a vault on a user's behalf (e.g. from a chat
+    /// command) without ever holding the user's key. `owner` is fixed at creation
+    /// and is the only address that can set rules or withdraw — this function does
+    /// not grant the caller any control over the resulting vault.
+    function createVaultFor(address owner, address token, address agent) external returns (address vault) {
+        return _createVault(owner, token, agent);
+    }
+
+    function _createVault(address owner, address token, address agent) private returns (address vault) {
+        if (vaultOf[owner] != address(0)) revert VaultAlreadyExists();
+
+        OrynVault v = new OrynVault(owner, token, agent);
         vault = address(v);
 
-        vaultOf[msg.sender] = vault;
+        vaultOf[owner] = vault;
         allVaults.push(vault);
 
-        emit VaultCreated(msg.sender, vault, agent);
+        emit VaultCreated(owner, vault, agent);
     }
 
     function vaultCount() external view returns (uint256) {
