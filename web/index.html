@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN — Autonomous Treasury Agent</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #111; }
+  h1 { font-size: clamp(20px, 6vw, 26px); margin-bottom: 4px; }
+  p.sub { color: #555; margin-top: 0; }
+  .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin: 16px 0; }
+  .card h2 { font-size: 16px; margin: 0 0 6px; }
+  .card p { font-size: 14px; color: #444; margin: 0 0 12px; }
+  a.btn {
+    display: inline-block; width: 100%; text-align: center; padding: 12px 16px;
+    font-size: 15px; border-radius: 8px; background: #111; color: #fff;
+    text-decoration: none; min-height: 44px; line-height: 20px;
+  }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  footer { margin-top: 24px; font-size: 12px; color: #888; }
+  @media (min-width: 480px) {
+    body { margin: 40px auto; }
+    a.btn { width: auto; }
+  }
+</style>
+</head>
+<body>
+  <h1>ORYN</h1>
+  <p class="sub">Non-custodial autonomous treasury agent on Celo. Every deposit into a vault is split automatically, onchain, per rules only the vault owner controls.</p>
+
+  <div class="card">
+    <h2>Deposit into a vault</h2>
+    <p>Pay into an ORYN vault (approve + deposit). ORYN's agent detects it and executes the split within ~15s.</p>
+    <a class="btn" href="/deposit.html">Open deposit page</a>
+  </div>
+
+  <div class="card">
+    <h2>Set vault rules</h2>
+    <p>Vault owners only — configure who gets paid and what %, directly from your wallet.</p>
+    <a class="btn" href="/set-rules.html">Open rules page</a>
+  </div>
+
+  <footer>
+    Built for the Celo Agentic Payments &amp; DeFAI Hackathon ·
+    <a href="https://github.com/angelraph/ORYN">github.com/angelraph/ORYN</a> ·
+    attribution tag <code>celo_2a23542d598e</code>
+  </footer>
+</body>
+</html>

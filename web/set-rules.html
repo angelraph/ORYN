@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN — Set Vault Rules</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #111; }
+  h1 { font-size: clamp(18px, 5vw, 20px); }
+  .row { margin: 16px 0; }
+  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  code, pre {
+    background: #f4f4f4; padding: 8px; border-radius: 6px; display: block;
+    overflow-x: auto; font-size: 12px; word-break: break-all; white-space: pre-wrap;
+  }
+  button {
+    width: 100%; padding: 14px 16px; font-size: 15px; border-radius: 8px;
+    border: 1px solid #333; background: #111; color: #fff; cursor: pointer;
+    margin-top: 10px; min-height: 44px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status { margin-top: 16px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+  .ok { color: #087f23; }
+  .err { color: #b00020; }
+  @media (min-width: 480px) {
+    body { margin: 40px auto; }
+    button { width: auto; margin-right: 8px; }
+  }
+</style>
+</head>
+<body>
+  <h1>ORYN — Set Vault Rules</h1>
+  <p>This sends <strong>one transaction</strong> from your connected wallet to your vault's <code>setRules()</code>. Only the vault owner can do this. Nothing is sent anywhere else — review the details below before confirming in your wallet.</p>
+
+  <div class="row">
+    <label>Vault address</label>
+    <code>0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E</code>
+  </div>
+  <div class="row">
+    <label>Rule being set</label>
+    <code>Designer 0x4a8B3B1BBE395844d8A79f3Cf33554873b388203 → 30% · remaining 70% stays in the vault as savings</code>
+  </div>
+  <div class="row">
+    <label>Raw calldata (for reference)</label>
+    <pre id="calldata">0x3c143dff000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000004a8b3b1bbe395844d8a79f3cf33554873b3882030000000000000000000000000000000000000000000000000000000000000bb8</pre>
+  </div>
+
+  <button id="connectBtn">1. Connect Wallet</button>
+  <button id="sendBtn" disabled>2. Send Transaction</button>
+
+  <div id="status"></div>
+
+  <script>
+    const VAULT = "0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E";
+    const DATA = document.getElementById("calldata").textContent.trim();
+    const CELO_CHAIN_ID_HEX = "0xa4ec"; // 42220
+
+    const statusEl = document.getElementById("status");
+    const connectBtn = document.getElementById("connectBtn");
+    const sendBtn = document.getElementById("sendBtn");
+
+    let account = null;
+
+    function setStatus(msg, cls) {
+      statusEl.textContent = msg;
+      statusEl.className = cls || "";
+    }
+
+    connectBtn.addEventListener("click", async () => {
+      if (!window.ethereum) {
+        setStatus("No wallet found. Install MetaMask (or open this page in a wallet browser) and reload.", "err");
+        return;
+      }
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        account = accounts[0];
+
+        const chainId = await window.ethereum.request({ method: "eth_chainId" });
+        if (chainId !== CELO_CHAIN_ID_HEX) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: CELO_CHAIN_ID_HEX }],
+            });
+          } catch (switchErr) {
+            if (switchErr.code === 4902) {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                  chainId: CELO_CHAIN_ID_HEX,
+                  chainName: "Celo Mainnet",
+                  nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
+                  rpcUrls: ["https://forno.celo.org"],
+                  blockExplorerUrls: ["https://celoscan.io"],
+                }],
+              });
+            } else {
+              throw switchErr;
+            }
+          }
+        }
+
+        setStatus(`Connected: ${account}\nMake sure this matches the vault owner address before sending.`, "ok");
+        sendBtn.disabled = false;
+      } catch (err) {
+        setStatus("Connect failed: " + (err && err.message ? err.message : err), "err");
+      }
+    });
+
+    sendBtn.addEventListener("click", async () => {
+      if (!account) return;
+      try {
+        setStatus("Sending — check your wallet for the confirmation prompt...");
+        const txHash = await window.ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{ from: account, to: VAULT, data: DATA, value: "0x0" }],
+        });
+        setStatus("Sent! Tx hash: " + txHash + "\n\nView on Celoscan: https://celoscan.io/tx/" + txHash, "ok");
+      } catch (err) {
+        setStatus("Transaction failed or was rejected: " + (err && err.message ? err.message : err), "err");
+      }
+    });
+  </script>
+</body>
+</html>
