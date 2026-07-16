@@ -27,7 +27,20 @@ export async function categorizeDistribution(params: {
   });
 
   if (!response.ok) {
-    throw new Error(`categorize request failed: ${response.status} ${await response.text()}`);
+    // The actual failure reason lives in the PAYMENT-RESPONSE (settlement attempted
+    // and rejected) or PAYMENT-REQUIRED (never got that far) header, base64-encoded
+    // JSON with an errorReason field — not in the body, which is usually just `{}`.
+    const paymentHeader =
+      response.headers.get("payment-response") ?? response.headers.get("payment-required");
+    let detail = await response.text();
+    if (paymentHeader) {
+      try {
+        detail = Buffer.from(paymentHeader, "base64").toString("utf-8");
+      } catch {
+        // fall through to the raw body text already captured above
+      }
+    }
+    throw new Error(`categorize request failed: ${response.status} ${detail}`);
   }
 
   return response.json();
