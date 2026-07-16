@@ -149,7 +149,7 @@
   .field { margin: 14px 0; }
   .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
   .field input, .field textarea {
-    width: 100%; padding: 11px; font-size: 15px; border-radius: 8px;
+    width: 100%; padding: 11px; font-size: 16px; border-radius: 8px;
     border: 1px solid var(--border); min-height: 44px; font-family: inherit; background: var(--bg); color: var(--text);
   }
   .field textarea { min-height: 74px; resize: vertical; }
@@ -163,9 +163,13 @@
   .balance-box strong { font-size: 17px; display: block; margin-top: 2px; }
   table.rules-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
   table.rules-table th, table.rules-table td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
-  table.rules-table td input { padding: 6px; font-size: 13px; min-height: 32px; }
-  .addr-book-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  table.rules-table td input { padding: 6px; font-size: 16px; min-height: 36px; width: 100%; }
+  .addr-book-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 13px; flex-wrap: wrap; }
   .addr-book-row span { flex: 1; color: var(--muted); }
+  .addr-book-row input {
+    font-size: 16px; padding: 9px; min-height: 40px; border-radius: 8px;
+    border: 1px solid var(--border); font-family: inherit; background: var(--bg); color: var(--text);
+  }
   .totals-line { font-size: 13px; color: var(--muted); margin-top: 8px; }
   .tab-help { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; }
   details.raw { margin-top: 16px; }
