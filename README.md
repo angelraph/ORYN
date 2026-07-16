@@ -14,8 +14,10 @@ tagged with ORYN's registered attribution code so it's independently verifiable 
 hackathon leaderboard:
 
 - **Attribution tag:** `celo_2a23542d598e`
-- **Vault factory (mainnet):** [`0xf3174fd03446bdef0c0a9a0ec0c263bc6bec328b`](https://celoscan.io/address/0xf3174fd03446bdef0c0a9a0ec0c263bc6bec328b)
+- **ERC-8004 agent identity:** [agentId 9688](https://8004scan.io/agents/celo/9688)
+- **Vault factory (mainnet):** [`0xcb45e24d147262302b6e7dac579e8ae4d879ef19`](https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19)
 - **Agent wallet:** [`0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26`](https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26)
+- **First vault (live):** [`0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E`](https://celoscan.io/address/0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E)
 
 ## How it works
 
