@@ -21,6 +21,29 @@ export const vaultAbi = [
     stateMutability: "view",
   },
   {
+    type: "function",
+    name: "setRules",
+    inputs: [
+      {
+        name: "newRules",
+        type: "tuple[]",
+        components: [
+          { name: "recipient", type: "address" },
+          { name: "bps", type: "uint16" },
+        ],
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "savingsBalance",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
     type: "event",
     name: "Deposited",
     inputs: [
