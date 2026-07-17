@@ -84,6 +84,13 @@
 
   /* ---- App / tabs ---- */
   .app-shell { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .tab-bar-wrap { position: relative; }
+  .tab-bar-wrap::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 1px; width: 32px;
+    background: linear-gradient(to right, transparent, var(--card));
+    pointer-events: none; opacity: 1; transition: opacity 0.2s ease;
+  }
+  .tab-bar-wrap.fade-hidden::after { opacity: 0; }
   .tab-bar { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); }
   .tab-btn {
     flex: 1; min-width: 110px; background: none; border: none; padding: 14px 10px; font-size: 13.5px; font-weight: 600;
@@ -154,11 +161,13 @@
 
   <div class="wrap">
     <div class="app-shell">
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab-btn="deposit">Deposit</button>
-        <button class="tab-btn" data-tab-btn="rules">Set Rules</button>
-        <button class="tab-btn" data-tab-btn="withdraw">Withdraw</button>
-        <button class="tab-btn" data-tab-btn="fund">Fund Agent</button>
+      <div class="tab-bar-wrap">
+        <div class="tab-bar" id="tabBar">
+          <button class="tab-btn active" data-tab-btn="deposit">Deposit</button>
+          <button class="tab-btn" data-tab-btn="rules">Set Rules</button>
+          <button class="tab-btn" data-tab-btn="withdraw">Withdraw</button>
+          <button class="tab-btn" data-tab-btn="fund">Fund Agent</button>
+        </div>
       </div>
       <div class="wallet-bar">
         <span class="addr" id="walletStatus">Not connected</span>
@@ -368,6 +377,18 @@
 
   const requestedTab = new URLSearchParams(window.location.search).get("tab");
   if (requestedTab && panels[requestedTab]) showTab(requestedTab);
+
+  // Hides the tab bar's right-edge scroll-fade once there's nothing left to scroll to,
+  // so it doesn't sit there implying more tabs when there aren't any.
+  const tabBar = document.getElementById("tabBar");
+  const tabBarWrap = document.querySelector(".tab-bar-wrap");
+  function updateTabBarFade() {
+    const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 2;
+    tabBarWrap.classList.toggle("fade-hidden", atEnd);
+  }
+  tabBar.addEventListener("scroll", updateTabBarFade);
+  window.addEventListener("resize", updateTabBarFade);
+  updateTabBarFade();
 
   // ============ DEPOSIT tab ============
   const SELECTOR_APPROVE = "095ea7b3";
