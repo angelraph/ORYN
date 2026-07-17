@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: Transactions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0e;
+    --bg-alt: #101018;
+    --card: #161622;
+    --text: #f8f9fa;
+    --muted: #9791ac;
+    --border: #27273a;
+    --accent: #7c4dff;
+    --accent-strong: #e040fb;
+    --accent-bg: rgba(124,77,255,0.14);
+    --code-bg: #101018;
+    --ok: #00e5ff;
+    --err: #ff5252;
+    --pending: #ffd600;
+    --grad-amethyst: linear-gradient(135deg, #311b92, #7c4dff, #e040fb);
+    --grad-liquidity: linear-gradient(135deg, #1a237e, #00e5ff);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 32px rgba(124,77,255,0.10);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); position: relative; overflow-x: hidden;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-weight: 400; line-height: 1.55; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  body::before {
+    content: ""; position: fixed; top: -20%; left: 50%; width: 900px; height: 900px;
+    transform: translateX(-50%); background: var(--grad-amethyst); opacity: 0.16;
+    filter: blur(120px); border-radius: 50%; z-index: 0; pointer-events: none;
+  }
+  a { color: var(--accent-strong); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+  @keyframes headerSlideIn {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  header.site {
+    position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    border-bottom: 1px solid var(--border);
+    animation: headerSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
+  .logo { font-weight: 700; font-size: 18px; letter-spacing: 0.02em; text-decoration: none; color: var(--text); }
+  nav.top { display: flex; gap: 20px; font-size: 14px; }
+  nav.top a { color: var(--muted); text-decoration: none; cursor: pointer; }
+  nav.top a:hover { color: var(--text); }
+
+  .page-head { padding: 40px 0 28px; }
+  @keyframes heroSlideIn {
+    from { transform: translateY(28px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  h1 {
+    font-size: clamp(26px, 4.4vw, 34px); font-weight: 700; line-height: 1.15; margin: 0 0 10px; letter-spacing: -0.02em;
+    animation: heroSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+  p.lead { color: var(--muted); font-size: 16px; max-width: 620px; margin: 0 0 28px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 22px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    text-decoration: none; min-height: 46px; border: 1px solid transparent; cursor: pointer;
+    width: 100%; font-family: inherit;
+  }
+  @media (min-width: 480px) { .btn:not(.block) { width: auto; } }
+  .btn.primary { background: var(--grad-amethyst); color: #ffffff; }
+  .btn.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.small { padding: 8px 14px; font-size: 13px; min-height: 36px; }
+
+  main { padding-bottom: 60px; }
+
+  /* ---- App / tabs ---- */
+  .app-shell { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .tab-bar { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); }
+  .tab-btn {
+    flex: 1; min-width: 110px; background: none; border: none; padding: 14px 10px; font-size: 13.5px; font-weight: 600;
+    color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; white-space: nowrap;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .wallet-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 14px 20px; background: var(--bg-alt); border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .wallet-bar .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
+  .tab-panel { padding: 24px 20px; }
+  .tab-panel[hidden] { display: none; }
+  .field { margin: 14px 0; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field textarea {
+    width: 100%; padding: 11px; font-size: 16px; border-radius: 8px;
+    border: 1px solid var(--border); min-height: 44px; font-family: inherit; background: var(--bg); color: var(--text);
+  }
+  .field textarea { min-height: 74px; resize: vertical; }
+  .field-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .panel-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .status-box { margin-top: 14px; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
+  .status-box.ok { color: var(--ok); }
+  .status-box.err { color: var(--err); }
+  .warn-box { color: var(--accent-strong); background: var(--accent-bg); padding: 8px 10px; border-radius: 8px; font-size: 12.5px; margin-top: 8px; }
+  .balance-box { background: var(--bg-alt); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 13.5px; }
+  .balance-box strong { font-size: 17px; display: block; margin-top: 2px; }
+  table.rules-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  table.rules-table th, table.rules-table td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  table.rules-table td input { padding: 6px; font-size: 16px; min-height: 36px; width: 100%; }
+  .addr-book-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 13px; flex-wrap: wrap; }
+  .addr-book-row span { flex: 1; color: var(--muted); }
+  .addr-book-row input {
+    font-size: 16px; padding: 9px; min-height: 40px; border-radius: 8px;
+    border: 1px solid var(--border); font-family: inherit; background: var(--bg); color: var(--text);
+  }
+  .totals-line { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .tab-help { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; }
+  details.raw { margin-top: 16px; }
+  details.raw summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+  details.raw pre { background: var(--code-bg); padding: 8px; border-radius: 6px; font-size: 11.5px; overflow-x: auto; word-break: break-all; white-space: pre-wrap; margin-top: 8px; }
+
+  footer { padding: 40px 0 60px; text-align: center; }
+  footer p { color: var(--muted); font-size: 13px; }
+  footer code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  footer .links { display: flex; gap: 16px; justify-content: center; margin-top: 10px; font-size: 13px; flex-wrap: wrap; }
+  footer .links a { text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">ORYN</a>
+    <nav class="top">
+      <a href="index.html">Home</a>
+      <a href="https://github.com/angelraph/ORYN">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap page-head">
+    <h1>Deposit, set rules, withdraw, or fund the agent</h1>
+    <p class="lead">All in one place. Nothing reaches your wallet until you review and approve it yourself.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="app-shell">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab-btn="deposit">Deposit</button>
+        <button class="tab-btn" data-tab-btn="rules">Set Rules</button>
+        <button class="tab-btn" data-tab-btn="withdraw">Withdraw</button>
+        <button class="tab-btn" data-tab-btn="fund">Fund Agent</button>
+      </div>
+      <div class="wallet-bar">
+        <span class="addr" id="walletStatus">Not connected</span>
+        <button class="btn small primary" id="connectBtn">Connect Wallet</button>
+        <button class="btn small secondary" id="disconnectBtn" style="display:none">Disconnect</button>
+      </div>
+
+      <!-- DEPOSIT -->
+      <div class="tab-panel" id="panel-deposit">
+        <p class="tab-help">Pay into a vault: approve the token, then deposit. Two transactions, both shown before you confirm.</p>
+        <div class="field"><label>Vault address</label><input id="depVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+        <div class="field"><label>Token address (cUSD, 18 decimals)</label><input id="depToken" value="0x765DE816845861e75A25fCA122bb6898B8B1282a" /></div>
+        <div class="field"><label>Amount (cUSD)</label><input id="depAmount" value="1.00" /></div>
+        <div class="panel-actions">
+          <button class="btn secondary" id="depApproveBtn" disabled>Approve</button>
+          <button class="btn primary" id="depSendBtn" disabled>Deposit</button>
+        </div>
+        <div class="status-box" id="depStatus"></div>
+      </div>
+
+      <!-- SET RULES -->
+      <div class="tab-panel" id="panel-rules" hidden>
+        <p class="tab-help">Describe your split in plain English. ORYN parses it into a table you review and edit before signing.</p>
+        <div class="field"><label>Vault address</label><input id="rulesVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+
+        <div class="field">
+          <label>Known recipients (saved in this browser only)</label>
+          <div id="addressBook"></div>
+          <div class="addr-book-row">
+            <input id="newName" placeholder="name (e.g. designer)" style="flex:1" />
+            <input id="newAddr" placeholder="0x..." style="flex:2" />
+            <button class="btn small secondary" id="addRecipientBtn" type="button">Add</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Describe your rules</label>
+          <textarea id="nlInput" placeholder="e.g. pay designer 30%, rest stays as savings"></textarea>
+        </div>
+        <button class="btn secondary" id="parseBtn" type="button">Parse</button>
+        <div id="rulesWarnings"></div>
+
+        <div id="rulesPreviewSection" style="display:none">
+          <table class="rules-table" id="previewTable">
+            <thead><tr><th>Recipient</th><th>%</th><th></th></tr></thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+          <div class="totals-line" id="rulesTotals"></div>
+          <div class="panel-actions">
+            <button class="btn primary" id="rulesSendBtn" disabled>Send Transaction</button>
+          </div>
+        </div>
+        <div class="status-box" id="rulesStatus"></div>
+        <details class="raw"><summary>Advanced: raw calldata</summary><pre id="rulesCalldataOut">(parse a rule first)</pre></details>
+      </div>
+
+      <!-- WITHDRAW -->
+      <div class="tab-panel" id="panel-withdraw" hidden>
+        <p class="tab-help">Owner-only. Pulls funds out of your vault's savings balance to any address.</p>
+        <div class="field"><label>Vault address</label><input id="wdVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+        <button class="btn secondary" id="wdCheckBtn" type="button">Check savings balance</button>
+        <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount">···</strong></div>
+        <div class="field"><label>Amount to withdraw (cUSD)</label><input id="wdAmount" placeholder="e.g. 0.01" /></div>
+        <div class="field"><label>Send to (defaults to your connected wallet)</label><input id="wdTo" placeholder="0x..." /></div>
+        <div class="panel-actions">
+          <button class="btn primary" id="wdSendBtn" disabled>Send Transaction</button>
+        </div>
+        <div class="status-box" id="wdStatus"></div>
+      </div>
+
+      <!-- FUND AGENT -->
+      <div class="tab-panel" id="panel-fund" hidden>
+        <p class="tab-help">Sends USDC to ORYN's agent wallet so it can pay for its own x402 categorization calls ($0.001 each).</p>
+        <div class="field"><label>Agent wallet (recipient)</label><input id="fundAgent" value="0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26" /></div>
+        <div class="field"><label>USDC token address</label><input id="fundToken" value="0xcebA9300f2b948710d2653dD7B07f33A8B32118C" /></div>
+        <div class="field"><label>Amount (USDC)</label><input id="fundAmount" value="1.00" /></div>
+        <div class="panel-actions">
+          <button class="btn primary" id="fundSendBtn" disabled>Send USDC</button>
+        </div>
+        <div class="status-box" id="fundStatus"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · Attribution tag <code>celo_2a23542d598e</code></p>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="https://github.com/angelraph/ORYN">GitHub</a>
+      <a href="https://celoscan.io/address/0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E">Celoscan</a>
+      <a href="https://8004scan.io/agents/celo/9688">8004scan</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ============ Shared constants & helpers ============
+  const CELO_CHAIN_ID_HEX = "0xa4ec"; // 42220
+  const RPC = "https://forno.celo.org";
+
+  function padHex(hex, bytes) { return hex.replace(/^0x/, "").padStart(bytes * 2, "0"); }
+  function encodeAddress(addr) { return padHex(addr, 32); }
+  function encodeUint256(bigintValue) { return padHex(bigintValue.toString(16), 32); }
+  function parseUnitsDecimal(value, decimals) {
+    const [whole, frac = ""] = value.trim().split(".");
+    const fracPadded = (frac + "0".repeat(decimals)).slice(0, decimals);
+    const wholeDigits = whole === "" ? "0" : whole;
+    return BigInt(wholeDigits + fracPadded);
+  }
+  function formatUnitsDecimal(bigintValue, decimals) {
+    const s = bigintValue.toString().padStart(decimals + 1, "0");
+    const whole = s.slice(0, -decimals) || "0";
+    const frac = s.slice(-decimals).replace(/0+$/, "");
+    return frac ? `${whole}.${frac}` : whole;
+  }
+  async function ethCallPublic(to, selector) {
+    const res = await fetch(RPC, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data: "0x" + selector }, "latest"] }),
+    });
+    const json = await res.json();
+    if (!json.result) throw new Error(json.error ? json.error.message : "no result");
+    return BigInt(json.result);
+  }
+
+  let account = null;
+  const walletStatus = document.getElementById("walletStatus");
+  const connectBtn = document.getElementById("connectBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  const sendButtons = ["depApproveBtn", "depSendBtn", "rulesSendBtn", "wdSendBtn", "fundSendBtn"];
+
+  function resetWalletUI() {
+    account = null;
+    walletStatus.textContent = "Not connected";
+    sendButtons.forEach((id) => { document.getElementById(id).disabled = true; });
+    connectBtn.style.display = "";
+    disconnectBtn.style.display = "none";
+    updateRulesTotalsAndCalldata();
+  }
+
+  disconnectBtn.addEventListener("click", async () => {
+    try {
+      await window.ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch {
+      // Not every wallet supports permission revocation (EIP-2255); this is best-effort.
+      // Either way, the app forgets the account below so no further actions can be signed
+      // from this page until the user reconnects.
+    }
+    resetWalletUI();
+  });
+
+  connectBtn.addEventListener("click", async () => {
+    if (!window.ethereum) {
+      walletStatus.textContent = "No wallet found. Install MetaMask and reload.";
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      account = accounts[0];
+
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      if (chainId !== CELO_CHAIN_ID_HEX) {
+        try {
+          await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CELO_CHAIN_ID_HEX }] });
+        } catch (switchErr) {
+          if (switchErr.code === 4902) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: CELO_CHAIN_ID_HEX, chainName: "Celo Mainnet",
+                nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
+                rpcUrls: ["https://forno.celo.org"], blockExplorerUrls: ["https://celoscan.io"],
+              }],
+            });
+          } else { throw switchErr; }
+        }
+      }
+
+      walletStatus.textContent = account;
+      sendButtons.forEach((id) => { document.getElementById(id).disabled = false; });
+      connectBtn.style.display = "none";
+      disconnectBtn.style.display = "";
+      const wdTo = document.getElementById("wdTo");
+      if (!wdTo.value) wdTo.value = account;
+      updateRulesTotalsAndCalldata();
+    } catch (err) {
+      walletStatus.textContent = "Connect failed: " + (err && err.message ? err.message : err);
+    }
+  });
+
+  // ============ Tabs ============
+  const tabButtons = document.querySelectorAll("[data-tab-btn]");
+  const panels = { deposit: "panel-deposit", rules: "panel-rules", withdraw: "panel-withdraw", fund: "panel-fund" };
+
+  function showTab(name) {
+    Object.entries(panels).forEach(([key, id]) => {
+      document.getElementById(id).hidden = key !== name;
+    });
+    tabButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.tabBtn === name));
+  }
+  tabButtons.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tabBtn)));
+
+  const requestedTab = new URLSearchParams(window.location.search).get("tab");
+  if (requestedTab && panels[requestedTab]) showTab(requestedTab);
+
+  // ============ DEPOSIT tab ============
+  const SELECTOR_APPROVE = "095ea7b3";
+  const SELECTOR_DEPOSIT = "b6b55f25";
+  const depVault = document.getElementById("depVault");
+  const depToken = document.getElementById("depToken");
+  const depAmount = document.getElementById("depAmount");
+  const depStatus = document.getElementById("depStatus");
+
+  function setStatus(el, msg, cls) { el.textContent = msg; el.className = "status-box " + (cls || ""); }
+
+  document.getElementById("depApproveBtn").addEventListener("click", async () => {
+    if (!account) return;
+    try {
+      const amount = parseUnitsDecimal(depAmount.value, 18);
+      const data = "0x" + SELECTOR_APPROVE + encodeAddress(depVault.value) + encodeUint256(amount);
+      setStatus(depStatus, "Sending approve(). Check your wallet...");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depToken.value, data, value: "0x0" }] });
+      setStatus(depStatus, "Approved. Tx: " + txHash + "\nNow click Deposit.", "ok");
+    } catch (err) { setStatus(depStatus, "Approve failed: " + (err && err.message ? err.message : err), "err"); }
+  });
+
+  document.getElementById("depSendBtn").addEventListener("click", async () => {
+    if (!account) return;
+    try {
+      const amount = parseUnitsDecimal(depAmount.value, 18);
+      const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
+      setStatus(depStatus, "Sending deposit(). Check your wallet...");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depVault.value, data, value: "0x0" }] });
+      setStatus(depStatus, "Deposited! Tx: " + txHash + "\nORYN's agent should detect this within ~15s.", "ok");
+    } catch (err) { setStatus(depStatus, "Deposit failed: " + (err && err.message ? err.message : err), "err"); }
+  });
+
+  // ============ SET RULES tab ============
+  const SELECTOR_SET_RULES = "3c143dff";
+  const STORAGE_KEY = "oryn_recipients";
+  const rulesVault = document.getElementById("rulesVault");
+  const addressBookEl = document.getElementById("addressBook");
+  const newName = document.getElementById("newName");
+  const newAddr = document.getElementById("newAddr");
+  const nlInput = document.getElementById("nlInput");
+  const rulesWarnings = document.getElementById("rulesWarnings");
+  const rulesPreviewSection = document.getElementById("rulesPreviewSection");
+  const previewBody = document.getElementById("previewBody");
+  const rulesTotals = document.getElementById("rulesTotals");
+  const rulesCalldataOut = document.getElementById("rulesCalldataOut");
+  const rulesStatus = document.getElementById("rulesStatus");
+  let currentRules = [];
+
+  function loadAddressBook() {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
+    return { designer: "0x4a8B3B1BBE395844d8A79f3Cf33554873b388203" };
+  }
+  function saveAddressBook(book) { localStorage.setItem(STORAGE_KEY, JSON.stringify(book)); }
+  function renderAddressBook() {
+    const book = loadAddressBook();
+    addressBookEl.innerHTML = "";
+    for (const [name, addr] of Object.entries(book)) {
+      const row = document.createElement("div");
+      row.className = "addr-book-row";
+      row.innerHTML = `<span><strong>${name}</strong>: ${addr}</span>`;
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "btn small secondary"; removeBtn.textContent = "Remove"; removeBtn.type = "button";
+      removeBtn.addEventListener("click", () => { const b = loadAddressBook(); delete b[name]; saveAddressBook(b); renderAddressBook(); });
+      row.appendChild(removeBtn);
+      addressBookEl.appendChild(row);
+    }
+  }
+  document.getElementById("addRecipientBtn").addEventListener("click", () => {
+    const name = newName.value.trim().toLowerCase();
+    const addr = newAddr.value.trim();
+    if (!name || !/^0x[a-fA-F0-9]{40}$/.test(addr)) { alert("Enter a name and a valid 0x address."); return; }
+    const book = loadAddressBook(); book[name] = addr; saveAddressBook(book);
+    newName.value = ""; newAddr.value = ""; renderAddressBook();
+  });
+  renderAddressBook();
+
+  function parseNaturalLanguage(text, addressBook) {
+    const warnings = []; const rules = [];
+    const clauses = text.split(/,|;|\n|\band\b/i).map((s) => s.trim()).filter(Boolean);
+    for (const clause of clauses) {
+      const lower = clause.toLowerCase();
+      const isSavingsPhrase = /\b(saving|savings|rest|remainder|remaining|keep)\b/.test(lower);
+      const addrMatch = clause.match(/0x[a-fA-F0-9]{40}/);
+      const textForPct = addrMatch ? clause.replace(addrMatch[0], "") : clause;
+      const pctMatch = textForPct.match(/(\d+(?:\.\d+)?)\s*%/);
+      if (isSavingsPhrase && !pctMatch) continue;
+      if (!pctMatch) { warnings.push(`Couldn't find a percentage in: "${clause}"`); continue; }
+      const pct = parseFloat(pctMatch[1]);
+      if (!(pct > 0 && pct <= 100)) { warnings.push(`Invalid percentage ${pct} in: "${clause}"`); continue; }
+      if (isSavingsPhrase) { warnings.push(`Note: "${clause}" mentions savings with a percentage. Unallocated funds already stay as savings automatically.`); continue; }
+      let recipient = null; let label = null;
+      if (addrMatch) { recipient = addrMatch[0]; label = recipient; }
+      else {
+        const foundName = Object.keys(addressBook).find((name) => lower.includes(name.toLowerCase()));
+        if (foundName) { recipient = addressBook[foundName]; label = foundName; }
+      }
+      if (!recipient) { warnings.push(`Found ${pct}% but no known recipient in: "${clause}". Add them above or include a 0x address.`); continue; }
+      rules.push({ recipient, label, pct });
+    }
+    const totalPct = rules.reduce((sum, r) => sum + r.pct, 0);
+    if (totalPct > 100) warnings.push(`Total allocated (${totalPct}%) exceeds 100%. Remove or reduce a rule before signing.`);
+    return { rules, warnings };
+  }
+
+  document.getElementById("parseBtn").addEventListener("click", () => {
+    const book = loadAddressBook();
+    const { rules, warnings } = parseNaturalLanguage(nlInput.value, book);
+    rulesWarnings.innerHTML = "";
+    for (const w of warnings) { const div = document.createElement("div"); div.className = "warn-box"; div.textContent = w; rulesWarnings.appendChild(div); }
+    currentRules = rules;
+    renderRulesPreview();
+  });
+
+  function renderRulesPreview() {
+    previewBody.innerHTML = "";
+    for (let i = 0; i < currentRules.length; i++) {
+      const r = currentRules[i];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input data-i="${i}" data-field="recipient" value="${r.recipient}" /><div style="font-size:11px;color:var(--muted)">${r.label || ""}</div></td>
+        <td><input data-i="${i}" data-field="pct" value="${r.pct}" style="width:64px" /></td>
+        <td><button class="btn small secondary" data-remove="${i}" type="button">✕</button></td>`;
+      previewBody.appendChild(tr);
+    }
+    previewBody.querySelectorAll("input").forEach((el) => {
+      el.addEventListener("input", (e) => {
+        const i = Number(e.target.dataset.i); const field = e.target.dataset.field;
+        currentRules[i][field] = field === "pct" ? parseFloat(e.target.value) || 0 : e.target.value;
+        updateRulesTotalsAndCalldata();
+      });
+    });
+    previewBody.querySelectorAll("[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => { currentRules.splice(Number(btn.dataset.remove), 1); renderRulesPreview(); });
+    });
+    rulesPreviewSection.style.display = currentRules.length > 0 ? "block" : "none";
+    updateRulesTotalsAndCalldata();
+  }
+
+  function buildRulesCalldata() {
+    const validRules = currentRules.filter((r) => /^0x[a-fA-F0-9]{40}$/.test(r.recipient) && r.pct > 0);
+    let data = SELECTOR_SET_RULES;
+    data += padHex("20", 32);
+    data += padHex(validRules.length.toString(16), 32);
+    for (const r of validRules) { data += padHex(r.recipient, 32); data += padHex(Math.round(r.pct * 100).toString(16), 32); }
+    return "0x" + data;
+  }
+
+  function updateRulesTotalsAndCalldata() {
+    const total = currentRules.reduce((sum, r) => sum + (r.pct || 0), 0);
+    rulesTotals.textContent = `Allocated: ${total}% · Stays as savings: ${Math.max(0, 100 - total)}%`;
+    rulesCalldataOut.textContent = currentRules.length > 0 ? buildRulesCalldata() : "(parse a rule first)";
+    document.getElementById("rulesSendBtn").disabled = !account || currentRules.length === 0 || total > 100;
+  }
+
+  document.getElementById("rulesSendBtn").addEventListener("click", async () => {
+    if (!account) return;
+    try {
+      const data = buildRulesCalldata();
+      setStatus(rulesStatus, "Sending. Check your wallet...");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: rulesVault.value, data, value: "0x0" }] });
+      setStatus(rulesStatus, "Sent! Tx: " + txHash, "ok");
+    } catch (err) { setStatus(rulesStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+  });
+
+  // ============ WITHDRAW tab ============
+  const SELECTOR_WITHDRAW = "00f714ce";
+  const SELECTOR_SAVINGS_BALANCE = "ad787096";
+  const wdVault = document.getElementById("wdVault");
+  const wdAmount = document.getElementById("wdAmount");
+  const wdTo = document.getElementById("wdTo");
+  const wdStatus = document.getElementById("wdStatus");
+  const wdBalanceBox = document.getElementById("wdBalanceBox");
+  const wdBalanceAmount = document.getElementById("wdBalanceAmount");
+
+  document.getElementById("wdCheckBtn").addEventListener("click", async () => {
+    try {
+      const value = await ethCallPublic(wdVault.value, SELECTOR_SAVINGS_BALANCE);
+      wdBalanceAmount.textContent = formatUnitsDecimal(value, 18) + " cUSD";
+      wdBalanceBox.style.display = "block";
+    } catch (err) { setStatus(wdStatus, "Failed to read balance: " + (err && err.message ? err.message : err), "err"); }
+  });
+
+  document.getElementById("wdSendBtn").addEventListener("click", async () => {
+    if (!account) return;
+    try {
+      const amount = parseUnitsDecimal(wdAmount.value, 18);
+      const to = wdTo.value || account;
+      const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
+      setStatus(wdStatus, "Sending. Check your wallet...");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: wdVault.value, data, value: "0x0" }] });
+      setStatus(wdStatus, "Sent! Tx: " + txHash, "ok");
+    } catch (err) { setStatus(wdStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+  });
+
+  // ============ FUND AGENT tab ============
+  const SELECTOR_TRANSFER = "a9059cbb";
+  const fundAgent = document.getElementById("fundAgent");
+  const fundToken = document.getElementById("fundToken");
+  const fundAmount = document.getElementById("fundAmount");
+  const fundStatus = document.getElementById("fundStatus");
+
+  document.getElementById("fundSendBtn").addEventListener("click", async () => {
+    if (!account) return;
+    try {
+      const amount = parseUnitsDecimal(fundAmount.value, 6); // USDC = 6 decimals
+      const data = "0x" + SELECTOR_TRANSFER + encodeAddress(fundAgent.value) + encodeUint256(amount);
+      setStatus(fundStatus, "Sending. Check your wallet...");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: fundToken.value, data, value: "0x0" }] });
+      setStatus(fundStatus, "Sent! Tx: " + txHash, "ok");
+    } catch (err) { setStatus(fundStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+  });
+</script>
+
+</body>
+</html>
