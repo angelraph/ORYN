@@ -3,53 +3,53 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ORYN — The Autonomous Treasury Agent</title>
+<title>ORYN: The Autonomous Treasury Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #ffffff;
-    --bg-alt: #f7f7f9;
-    --card: #ffffff;
-    --text: #16161a;
-    --muted: #62626c;
-    --border: #e6e6ea;
-    --accent: #a5730f;
-    --accent-strong: #7c5609;
-    --accent-bg: #fbf2df;
-    --code-bg: #f2f2f5;
-    --ok: #0a7d33;
-    --err: #b00020;
-    --shadow: 0 1px 2px rgba(16,16,20,0.04), 0 8px 24px rgba(16,16,20,0.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0b0b0d;
-      --bg-alt: #131316;
-      --card: #17171b;
-      --text: #f2f2f5;
-      --muted: #9a9aa5;
-      --border: #26262b;
-      --accent: #e0ac4f;
-      --accent-strong: #f2c774;
-      --accent-bg: #2a2213;
-      --code-bg: #1c1c21;
-      --ok: #4fd17a;
-      --err: #ff6b6b;
-      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-    }
+    --bg: #0a0a0e;
+    --bg-alt: #101018;
+    --card: #161622;
+    --text: #f8f9fa;
+    --muted: #9791ac;
+    --border: #27273a;
+    --accent: #7c4dff;
+    --accent-strong: #e040fb;
+    --accent-bg: rgba(124,77,255,0.14);
+    --code-bg: #101018;
+    --ok: #00e5ff;
+    --err: #ff5252;
+    --pending: #ffd600;
+    --grad-amethyst: linear-gradient(135deg, #311b92, #7c4dff, #e040fb);
+    --grad-liquidity: linear-gradient(135deg, #1a237e, #00e5ff);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 32px rgba(124,77,255,0.10);
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    line-height: 1.55; -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--bg); color: var(--text); position: relative; overflow-x: hidden;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-weight: 400; line-height: 1.55; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  body::before {
+    content: ""; position: fixed; top: -20%; left: 50%; width: 900px; height: 900px;
+    transform: translateX(-50%); background: var(--grad-amethyst); opacity: 0.16;
+    filter: blur(120px); border-radius: 50%; z-index: 0; pointer-events: none;
   }
   a { color: var(--accent-strong); }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+  @keyframes headerSlideIn {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
   header.site {
     position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
     background: color-mix(in srgb, var(--bg) 85%, transparent);
     border-bottom: 1px solid var(--border);
+    animation: headerSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   header.site .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
   .logo { font-weight: 700; font-size: 18px; letter-spacing: 0.02em; text-decoration: none; color: var(--text); }
@@ -58,14 +58,14 @@
   nav.top a:hover { color: var(--text); }
   @media (min-width: 640px) { nav.top { display: flex; } }
 
-  .hero { padding: 56px 0 40px; text-align: center; }
+  .hero { padding: 56px 0 40px; text-align: center; position: relative; z-index: 1; }
   .eyebrow {
     display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
     text-transform: uppercase; color: var(--accent-strong); background: var(--accent-bg);
     padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
   }
-  h1 { font-size: clamp(32px, 6vw, 48px); line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.02em; }
-  .hero p.sub { font-size: clamp(16px, 2.4vw, 19px); color: var(--muted); max-width: 620px; margin: 0 auto 32px; }
+  h1 { font-size: clamp(32px, 6vw, 48px); font-weight: 700; line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.02em; }
+  .hero p.sub { font-size: clamp(16px, 2.4vw, 19px); font-weight: 500; color: var(--muted); max-width: 620px; margin: 0 auto 32px; }
   .cta-row { display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; margin-bottom: 40px; }
   @media (min-width: 480px) { .cta-row { flex-direction: row; } }
   .btn {
@@ -75,7 +75,7 @@
     width: 100%; font-family: inherit;
   }
   @media (min-width: 480px) { .btn:not(.block) { width: auto; } }
-  .btn.primary { background: var(--text); color: var(--bg); }
+  .btn.primary { background: var(--grad-amethyst); color: #ffffff; }
   .btn.secondary { background: transparent; color: var(--text); border-color: var(--border); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn.small { padding: 8px 14px; font-size: 13px; min-height: 36px; }
@@ -90,7 +90,7 @@
 
   section { padding: 48px 0; border-top: 1px solid var(--border); }
   section.plain { border-top: none; padding-top: 0; }
-  h2 { font-size: clamp(22px, 3.4vw, 28px); letter-spacing: -0.01em; margin: 0 0 12px; }
+  h2 { font-size: clamp(22px, 3.4vw, 28px); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 12px; }
   h2 .kicker { display: block; font-size: 13px; font-weight: 600; color: var(--accent-strong); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   p.lead { color: var(--muted); font-size: 16px; max-width: 620px; margin: 0 0 28px; }
 
@@ -103,7 +103,7 @@
     width: 40px; height: 40px; border-radius: 10px; background: var(--accent-bg); color: var(--accent-strong);
     display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0;
   }
-  .step h3 { margin: 0 0 6px; font-size: 16px; }
+  .step h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
   .step p { margin: 0 0 10px; color: var(--muted); font-size: 14.5px; }
   .step a.tool-link { font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
   .step a.tool-link::after { content: " →"; }
@@ -202,16 +202,16 @@
   <div class="hero wrap">
     <span class="eyebrow">Live on Celo mainnet · Non-custodial</span>
     <h1>Your money, automatically organized.</h1>
-    <p class="sub">ORYN watches every payment you receive and splits it exactly the way you tell it to — pay a collaborator, save a percentage, keep the rest — instantly, onchain, without you touching a spreadsheet.</p>
+    <p class="sub">ORYN watches every payment you receive and splits it exactly the way you tell it to: pay a collaborator, save a percentage, keep the rest. Instantly, onchain, without you touching a spreadsheet.</p>
     <div class="cta-row">
       <a class="btn primary" data-scroll="app">Open the app</a>
       <a class="btn secondary" href="https://github.com/angelraph/ORYN">View the code</a>
     </div>
 
     <div class="stats" id="statsGrid">
-      <div class="stat"><span class="num" id="statDeposited">—</span><span class="label">cUSD received</span></div>
-      <div class="stat"><span class="num" id="statDistributed">—</span><span class="label">cUSD paid out</span></div>
-      <div class="stat"><span class="num" id="statSavings">—</span><span class="label">cUSD in savings</span></div>
+      <div class="stat"><span class="num" id="statDeposited">···</span><span class="label">cUSD received</span></div>
+      <div class="stat"><span class="num" id="statDistributed">···</span><span class="label">cUSD paid out</span></div>
+      <div class="stat"><span class="num" id="statSavings">···</span><span class="label">cUSD in savings</span></div>
     </div>
   </div>
 
@@ -220,7 +220,7 @@
       <h2><span class="kicker">The problem</span>Getting paid shouldn't mean doing accounting</h2>
       <p class="lead">
         Freelancers, creators, and small teams do the same thing every time money comes in: set some aside for savings,
-        pay a collaborator, track it all by hand. It's repetitive and easy to get wrong. ORYN does it automatically —
+        pay a collaborator, track it all by hand. It's repetitive and easy to get wrong. ORYN does it automatically:
         you describe the rule once, and it runs itself from then on.
       </p>
       <details class="explainer">
@@ -228,7 +228,7 @@
         <div class="content">
           <p><strong>A wallet</strong> is just an app (like MetaMask) that holds your money and lets you approve transactions. Nobody, including ORYN, can move funds from it without you personally approving each action.</p>
           <p><strong>cUSD</strong> is a digital dollar (1 cUSD ≈ $1) that runs on Celo, a fast, low-cost payment network. It's the currency ORYN actually moves.</p>
-          <p><strong>Non-custodial</strong> means ORYN never holds or controls your money — it only has permission to execute a split you already approved, and that permission can never be used to send funds anywhere you didn't authorize.</p>
+          <p><strong>Non-custodial</strong> means ORYN never holds or controls your money. It only has permission to execute a split you already approved, and that permission can never be used to send funds anywhere you didn't authorize.</p>
         </div>
       </details>
     </div>
@@ -243,14 +243,14 @@
           <div class="n">1</div>
           <div>
             <h3>Get your vault</h3>
-            <p>A vault is a smart contract that only you control — think of it as your personal, programmable bank account on Celo. One vault per person.</p>
+            <p>A vault is a smart contract that only you control: think of it as your personal, programmable bank account on Celo. One vault per person.</p>
           </div>
         </div>
         <div class="step">
           <div class="n">2</div>
           <div>
             <h3>Describe your split in plain English</h3>
-            <p>"Pay my designer 30%, rest stays as savings." ORYN turns that into a rule you review and sign yourself — nothing is guessed silently.</p>
+            <p>"Pay my designer 30%, rest stays as savings." ORYN turns that into a rule you review and sign yourself. Nothing is guessed silently.</p>
             <a class="tool-link" data-scroll="app" data-tab="rules">Open Set Rules in the app</a>
           </div>
         </div>
@@ -266,7 +266,7 @@
           <div class="n">4</div>
           <div>
             <h3>ORYN executes the split automatically</h3>
-            <p>Within seconds of a deposit, the agent detects it and runs your exact rule onchain — no manual step, no delay.</p>
+            <p>Within seconds of a deposit, the agent detects it and runs your exact rule onchain, no manual step, no delay.</p>
           </div>
         </div>
         <div class="step">
@@ -283,12 +283,12 @@
 
   <section id="for-payers">
     <div class="wrap">
-      <h2><span class="kicker">Paying someone via ORYN?</span>You don't need a vault — just a wallet</h2>
+      <h2><span class="kicker">Paying someone via ORYN?</span>You don't need a vault, just a wallet</h2>
       <p class="lead">If someone asked you to pay them through ORYN, here's everything you need. No sign-up, no account.</p>
       <div class="card-box">
         <ul class="req-list">
-          <li><span class="dot"></span><span><strong>A wallet</strong> that can connect to a website (MetaMask or similar) — it'll prompt you to add Celo automatically if needed.</span></li>
-          <li><span class="dot"></span><span><strong>A little CELO</strong> for gas — a fraction of a cent covers it.</span></li>
+          <li><span class="dot"></span><span><strong>A wallet</strong> that can connect to a website (MetaMask or similar), which will prompt you to add Celo automatically if needed.</span></li>
+          <li><span class="dot"></span><span><strong>A little CELO</strong> for gas: a fraction of a cent covers it.</span></li>
           <li><span class="dot"></span><span><strong>cUSD</strong> for the amount you're paying. Don't have any? Swap CELO for cUSD non-custodially at <a href="https://app.mento.org">app.mento.org</a>, or ask whoever you're paying for their vault's address.</span></li>
         </ul>
         <div style="margin-top:20px">
@@ -315,7 +315,7 @@
   <section id="app">
     <div class="wrap">
       <h2><span class="kicker">Try it now</span>Everything in one place</h2>
-      <p class="lead">Deposit, set your rules, withdraw, or fund the agent — all here. Nothing reaches your wallet until you review and approve it yourself.</p>
+      <p class="lead">Deposit, set your rules, withdraw, or fund the agent: all here. Nothing reaches your wallet until you review and approve it yourself.</p>
 
       <div class="app-shell">
         <div class="tab-bar">
@@ -383,7 +383,7 @@
           <p class="tab-help">Owner-only. Pulls funds out of your vault's savings balance to any address.</p>
           <div class="field"><label>Vault address</label><input id="wdVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
           <button class="btn secondary" id="wdCheckBtn" type="button">Check savings balance</button>
-          <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount">—</strong></div>
+          <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount">···</strong></div>
           <div class="field"><label>Amount to withdraw (cUSD)</label><input id="wdAmount" placeholder="e.g. 0.01" /></div>
           <div class="field"><label>Send to (defaults to your connected wallet)</label><input id="wdTo" placeholder="0x..." /></div>
           <div class="panel-actions">
@@ -447,7 +447,7 @@
 
   connectBtn.addEventListener("click", async () => {
     if (!window.ethereum) {
-      walletStatus.textContent = "No wallet found — install MetaMask and reload.";
+      walletStatus.textContent = "No wallet found. Install MetaMask and reload.";
       return;
     }
     try {
@@ -547,7 +547,7 @@
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
       const data = "0x" + SELECTOR_APPROVE + encodeAddress(depVault.value) + encodeUint256(amount);
-      setStatus(depStatus, "Sending approve() — check your wallet...");
+      setStatus(depStatus, "Sending approve(). Check your wallet...");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depToken.value, data, value: "0x0" }] });
       setStatus(depStatus, "Approved. Tx: " + txHash + "\nNow click Deposit.", "ok");
     } catch (err) { setStatus(depStatus, "Approve failed: " + (err && err.message ? err.message : err), "err"); }
@@ -558,7 +558,7 @@
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
       const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
-      setStatus(depStatus, "Sending deposit() — check your wallet...");
+      setStatus(depStatus, "Sending deposit(). Check your wallet...");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depVault.value, data, value: "0x0" }] });
       setStatus(depStatus, "Deposited! Tx: " + txHash + "\nORYN's agent should detect this within ~15s.", "ok");
     } catch (err) { setStatus(depStatus, "Deposit failed: " + (err && err.message ? err.message : err), "err"); }
@@ -591,7 +591,7 @@
     for (const [name, addr] of Object.entries(book)) {
       const row = document.createElement("div");
       row.className = "addr-book-row";
-      row.innerHTML = `<span><strong>${name}</strong> — ${addr}</span>`;
+      row.innerHTML = `<span><strong>${name}</strong>: ${addr}</span>`;
       const removeBtn = document.createElement("button");
       removeBtn.className = "btn small secondary"; removeBtn.textContent = "Remove"; removeBtn.type = "button";
       removeBtn.addEventListener("click", () => { const b = loadAddressBook(); delete b[name]; saveAddressBook(b); renderAddressBook(); });
@@ -621,18 +621,18 @@
       if (!pctMatch) { warnings.push(`Couldn't find a percentage in: "${clause}"`); continue; }
       const pct = parseFloat(pctMatch[1]);
       if (!(pct > 0 && pct <= 100)) { warnings.push(`Invalid percentage ${pct} in: "${clause}"`); continue; }
-      if (isSavingsPhrase) { warnings.push(`Note: "${clause}" mentions savings with a percentage — unallocated funds already stay as savings automatically.`); continue; }
+      if (isSavingsPhrase) { warnings.push(`Note: "${clause}" mentions savings with a percentage. Unallocated funds already stay as savings automatically.`); continue; }
       let recipient = null; let label = null;
       if (addrMatch) { recipient = addrMatch[0]; label = recipient; }
       else {
         const foundName = Object.keys(addressBook).find((name) => lower.includes(name.toLowerCase()));
         if (foundName) { recipient = addressBook[foundName]; label = foundName; }
       }
-      if (!recipient) { warnings.push(`Found ${pct}% but no known recipient in: "${clause}" — add them above or include a 0x address.`); continue; }
+      if (!recipient) { warnings.push(`Found ${pct}% but no known recipient in: "${clause}". Add them above or include a 0x address.`); continue; }
       rules.push({ recipient, label, pct });
     }
     const totalPct = rules.reduce((sum, r) => sum + r.pct, 0);
-    if (totalPct > 100) warnings.push(`Total allocated (${totalPct}%) exceeds 100% — remove or reduce a rule before signing.`);
+    if (totalPct > 100) warnings.push(`Total allocated (${totalPct}%) exceeds 100%. Remove or reduce a rule before signing.`);
     return { rules, warnings };
   }
 
@@ -690,7 +690,7 @@
     if (!account) return;
     try {
       const data = buildRulesCalldata();
-      setStatus(rulesStatus, "Sending — check your wallet...");
+      setStatus(rulesStatus, "Sending. Check your wallet...");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: rulesVault.value, data, value: "0x0" }] });
       setStatus(rulesStatus, "Sent! Tx: " + txHash, "ok");
     } catch (err) { setStatus(rulesStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
@@ -720,7 +720,7 @@
       const amount = parseUnitsDecimal(wdAmount.value, 18);
       const to = wdTo.value || account;
       const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
-      setStatus(wdStatus, "Sending — check your wallet...");
+      setStatus(wdStatus, "Sending. Check your wallet...");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: wdVault.value, data, value: "0x0" }] });
       setStatus(wdStatus, "Sent! Tx: " + txHash, "ok");
     } catch (err) { setStatus(wdStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
@@ -738,7 +738,7 @@
     try {
       const amount = parseUnitsDecimal(fundAmount.value, 6); // USDC = 6 decimals
       const data = "0x" + SELECTOR_TRANSFER + encodeAddress(fundAgent.value) + encodeUint256(amount);
-      setStatus(fundStatus, "Sending — check your wallet...");
+      setStatus(fundStatus, "Sending. Check your wallet...");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: fundToken.value, data, value: "0x0" }] });
       setStatus(fundStatus, "Sent! Tx: " + txHash, "ok");
     } catch (err) { setStatus(fundStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }

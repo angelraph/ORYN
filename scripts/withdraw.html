@@ -3,34 +3,41 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ORYN — Withdraw Savings</title>
+<title>ORYN: Withdraw Savings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
+  :root {
+    --bg: #0a0a0e; --card: #161622; --text: #f8f9fa; --muted: #9791ac; --border: #27273a;
+    --code-bg: #101018; --ok: #00e5ff; --err: #ff5252; --grad-amethyst: linear-gradient(135deg, #311b92, #7c4dff, #e040fb);
+  }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #111; }
-  h1 { font-size: clamp(18px, 5vw, 20px); margin-bottom: 4px; }
-  p.sub { color: #555; font-size: 14px; margin-top: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; font-weight: 400; max-width: 640px; margin: 24px auto; padding: 0 16px; background: var(--bg); color: var(--text); }
+  h1 { font-size: clamp(18px, 5vw, 20px); font-weight: 700; margin-bottom: 4px; }
+  p.sub { color: var(--muted); font-size: 14px; font-weight: 500; margin-top: 0; }
   .row { margin: 16px 0; }
-  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
   input {
     width: 100%; padding: 12px; font-size: 16px; border-radius: 8px;
-    border: 1px solid #ccc; min-height: 44px;
+    border: 1px solid var(--border); min-height: 44px; background: var(--card); color: var(--text); font-family: inherit;
   }
   code, pre {
-    background: #f4f4f4; padding: 8px; border-radius: 6px; display: block;
+    background: var(--code-bg); padding: 8px; border-radius: 6px; display: block;
     overflow-x: auto; font-size: 12px; word-break: break-all; white-space: pre-wrap;
   }
   button {
-    width: 100%; padding: 14px 16px; font-size: 15px; border-radius: 8px;
-    border: 1px solid #333; background: #111; color: #fff; cursor: pointer;
-    margin-top: 10px; min-height: 44px;
+    width: 100%; padding: 14px 16px; font-size: 15px; font-weight: 500; border-radius: 8px;
+    border: none; background: var(--grad-amethyst); color: #fff; cursor: pointer;
+    margin-top: 10px; min-height: 44px; font-family: inherit;
   }
-  button.secondary { background: #fff; color: #111; }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .balance-box { background: #f4f4f4; border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 14px; }
-  .balance-box strong { font-size: 18px; display: block; margin-top: 2px; }
+  .balance-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 14px; }
+  .balance-box strong { font-size: 18px; font-weight: 400; display: block; margin-top: 2px; }
   #status { margin-top: 16px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-  .ok { color: #087f23; }
-  .err { color: #b00020; }
+  .ok { color: var(--ok); }
+  .err { color: var(--err); }
   @media (min-width: 480px) {
     body { margin: 40px auto; }
     button { width: auto; margin-right: 8px; }
@@ -38,7 +45,7 @@
 </style>
 </head>
 <body>
-  <h1>ORYN — Withdraw Savings</h1>
+  <h1>ORYN: Withdraw Savings</h1>
   <p class="sub">Owner-only. Pulls funds out of your vault's savings balance to any address you choose.</p>
 
   <div class="row">
@@ -49,7 +56,7 @@
   <button id="checkBtn" type="button" class="secondary">Check savings balance</button>
   <div class="balance-box" id="balanceBox" style="display:none">
     Available to withdraw
-    <strong id="balanceAmount">—</strong>
+    <strong id="balanceAmount">···</strong>
   </div>
 
   <div class="row">
@@ -68,8 +75,8 @@
 
   <script>
     const CELO_CHAIN_ID_HEX = "0xa4ec"; // 42220
-    const SELECTOR_WITHDRAW = "00f714ce"; // withdraw(uint256,address) — verified via viem
-    const SELECTOR_SAVINGS_BALANCE = "ad787096"; // savingsBalance() — verified via viem
+    const SELECTOR_WITHDRAW = "00f714ce"; // withdraw(uint256,address), verified via viem
+    const SELECTOR_SAVINGS_BALANCE = "ad787096"; // savingsBalance(), verified via viem
     const TOKEN_DECIMALS = 18; // cUSD / USDm
 
     const vaultInput = document.getElementById("vaultInput");
@@ -170,7 +177,7 @@
           }
         }
 
-        setStatus(`Connected: ${account}\nMake sure this matches the vault owner — only the owner can withdraw.`, "ok");
+        setStatus(`Connected: ${account}\nMake sure this matches the vault owner. Only the owner can withdraw.`, "ok");
         sendBtn.disabled = false;
       } catch (err) {
         setStatus("Connect failed: " + (err && err.message ? err.message : err), "err");
@@ -183,7 +190,7 @@
         const amount = parseUnitsDecimal(amountInput.value, TOKEN_DECIMALS);
         const to = toInput.value || account;
         const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
-        setStatus("Sending — check your wallet for the confirmation prompt...");
+        setStatus("Sending. Check your wallet for the confirmation prompt...");
         const txHash = await window.ethereum.request({
           method: "eth_sendTransaction",
           params: [{ from: account, to: vaultInput.value, data, value: "0x0" }],

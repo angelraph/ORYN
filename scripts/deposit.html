@@ -3,31 +3,39 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ORYN — Deposit into Vault</title>
+<title>ORYN: Deposit into Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
+  :root {
+    --bg: #0a0a0e; --card: #161622; --text: #f8f9fa; --muted: #9791ac; --border: #27273a;
+    --accent-strong: #e040fb; --accent-bg: rgba(124,77,255,0.14); --code-bg: #101018;
+    --ok: #00e5ff; --err: #ff5252; --grad-amethyst: linear-gradient(135deg, #311b92, #7c4dff, #e040fb);
+  }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #111; }
-  h1 { font-size: clamp(18px, 5vw, 20px); }
+  body { font-family: "Inter", system-ui, sans-serif; font-weight: 400; max-width: 640px; margin: 24px auto; padding: 0 16px; background: var(--bg); color: var(--text); }
+  h1 { font-size: clamp(18px, 5vw, 20px); font-weight: 700; }
   .row { margin: 16px 0; }
-  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
   input {
     width: 100%; padding: 12px; font-size: 16px; border-radius: 8px;
-    border: 1px solid #ccc; min-height: 44px;
+    border: 1px solid var(--border); min-height: 44px; background: var(--card); color: var(--text); font-family: inherit;
   }
   code, pre {
-    background: #f4f4f4; padding: 8px; border-radius: 6px; display: block;
+    background: var(--code-bg); padding: 8px; border-radius: 6px; display: block;
     overflow-x: auto; font-size: 12px; word-break: break-all; white-space: pre-wrap;
   }
   button {
-    width: 100%; padding: 14px 16px; font-size: 15px; border-radius: 8px;
-    border: 1px solid #333; background: #111; color: #fff; cursor: pointer;
-    margin-top: 10px; min-height: 44px;
+    width: 100%; padding: 14px 16px; font-size: 15px; font-weight: 500; border-radius: 8px;
+    border: none; background: var(--grad-amethyst); color: #fff; cursor: pointer;
+    margin-top: 10px; min-height: 44px; font-family: inherit;
   }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   #status { margin-top: 16px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-  .ok { color: #087f23; }
-  .err { color: #b00020; }
-  .step { margin-top: 4px; font-size: 13px; color: #555; }
+  .ok { color: var(--ok); }
+  .err { color: var(--err); }
+  .step { margin-top: 4px; font-size: 13px; color: var(--muted); }
   @media (min-width: 480px) {
     body { margin: 40px auto; }
     button { width: auto; margin-right: 8px; }
@@ -35,7 +43,7 @@
 </style>
 </head>
 <body>
-  <h1>ORYN — Deposit into Vault</h1>
+  <h1>ORYN: Deposit into Vault</h1>
   <p>This pays into an ORYN vault: <strong>approve</strong> the vault to pull the token, then <strong>deposit</strong>. Two transactions, both shown before you confirm.</p>
 
   <div class="row">
@@ -146,7 +154,7 @@
       try {
         const amount = parseUnitsDecimal(amountInput.value, 18);
         const data = "0x" + SELECTOR_APPROVE + encodeAddress(vaultInput.value) + encodeUint256(amount);
-        setStatus("Sending approve() — check your wallet...");
+        setStatus("Sending approve(). Check your wallet...");
         const txHash = await window.ethereum.request({
           method: "eth_sendTransaction",
           params: [{ from: account, to: tokenInput.value, data, value: "0x0" }],
@@ -162,7 +170,7 @@
       try {
         const amount = parseUnitsDecimal(amountInput.value, 18);
         const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
-        setStatus("Sending deposit() — check your wallet...");
+        setStatus("Sending deposit(). Check your wallet...");
         const txHash = await window.ethereum.request({
           method: "eth_sendTransaction",
           params: [{ from: account, to: vaultInput.value, data, value: "0x0" }],

@@ -3,44 +3,52 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ORYN — Set Vault Rules</title>
+<title>ORYN: Set Vault Rules</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
+  :root {
+    --bg: #0a0a0e; --card: #161622; --text: #f8f9fa; --muted: #9791ac; --border: #27273a;
+    --accent-strong: #e040fb; --accent-bg: rgba(124,77,255,0.14); --code-bg: #101018;
+    --ok: #00e5ff; --err: #ff5252; --pending: #ffd600; --grad-amethyst: linear-gradient(135deg, #311b92, #7c4dff, #e040fb);
+  }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; color: #111; }
-  h1 { font-size: clamp(18px, 5vw, 20px); margin-bottom: 4px; }
-  h2 { font-size: 15px; margin: 24px 0 8px; }
-  p.sub { color: #555; font-size: 14px; margin-top: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; font-weight: 400; max-width: 640px; margin: 24px auto; padding: 0 16px; background: var(--bg); color: var(--text); }
+  h1 { font-size: clamp(18px, 5vw, 20px); font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 15px; font-weight: 500; margin: 24px 0 8px; }
+  p.sub { color: var(--muted); font-size: 14px; font-weight: 500; margin-top: 0; }
   .row { margin: 16px 0; }
-  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
   input, textarea {
     width: 100%; padding: 12px; font-size: 16px; border-radius: 8px;
-    border: 1px solid #ccc; min-height: 44px; font-family: inherit;
+    border: 1px solid var(--border); min-height: 44px; font-family: inherit; background: var(--card); color: var(--text);
   }
   textarea { min-height: 80px; resize: vertical; }
   code, pre {
-    background: #f4f4f4; padding: 8px; border-radius: 6px; display: block;
+    background: var(--code-bg); padding: 8px; border-radius: 6px; display: block;
     overflow-x: auto; font-size: 12px; word-break: break-all; white-space: pre-wrap;
   }
   button {
-    width: 100%; padding: 14px 16px; font-size: 15px; border-radius: 8px;
-    border: 1px solid #333; background: #111; color: #fff; cursor: pointer;
-    margin-top: 10px; min-height: 44px;
+    width: 100%; padding: 14px 16px; font-size: 15px; font-weight: 500; border-radius: 8px;
+    border: none; background: var(--grad-amethyst); color: #fff; cursor: pointer;
+    margin-top: 10px; min-height: 44px; font-family: inherit;
   }
-  button.secondary { background: #fff; color: #111; }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   button.small { width: auto; padding: 8px 12px; font-size: 13px; min-height: 36px; margin-top: 0; }
   #status { margin-top: 16px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-  .ok { color: #087f23; }
-  .err { color: #b00020; }
-  .warn { color: #a15c00; background: #fff6e5; padding: 8px; border-radius: 6px; font-size: 13px; margin-top: 8px; }
+  .ok { color: var(--ok); }
+  .err { color: var(--err); }
+  .warn { color: var(--accent-strong); background: var(--accent-bg); padding: 8px; border-radius: 6px; font-size: 13px; margin-top: 8px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #eee; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
   td input { padding: 6px; font-size: 13px; min-height: 32px; }
   .addr-book-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
   .addr-book-row span { flex: 1; font-size: 13px; }
-  .totals { font-size: 13px; color: #555; margin-top: 8px; }
-  details { margin-top: 20px; border-top: 1px solid #eee; padding-top: 12px; }
-  summary { cursor: pointer; font-size: 13px; color: #555; }
+  .totals { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  details { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--muted); }
   @media (min-width: 480px) {
     body { margin: 40px auto; }
     button:not(.small) { width: auto; margin-right: 8px; }
@@ -48,8 +56,8 @@
 </style>
 </head>
 <body>
-  <h1>ORYN — Set Vault Rules</h1>
-  <p class="sub">Describe your split in plain English. ORYN parses it into a rules table you review and edit — nothing reaches your wallet until you approve the exact table below.</p>
+  <h1>ORYN: Set Vault Rules</h1>
+  <p class="sub">Describe your split in plain English. ORYN parses it into a rules table you review and edit. Nothing reaches your wallet until you approve the exact table below.</p>
 
   <div class="row">
     <label>Vault address</label>
@@ -90,7 +98,7 @@
 
   <script>
     const CELO_CHAIN_ID_HEX = "0xa4ec"; // 42220
-    const SELECTOR_SET_RULES = "3c143dff"; // setRules((address,uint16)[]) — verified via viem, not guessed
+    const SELECTOR_SET_RULES = "3c143dff"; // setRules((address,uint16)[]), verified via viem, not guessed
     const STORAGE_KEY = "oryn_recipients";
 
     const vaultInput = document.getElementById("vaultInput");
@@ -130,7 +138,7 @@
       for (const [name, addr] of Object.entries(book)) {
         const row = document.createElement("div");
         row.className = "addr-book-row";
-        row.innerHTML = `<span><strong>${name}</strong> — ${addr}</span>`;
+        row.innerHTML = `<span><strong>${name}</strong>: ${addr}</span>`;
         const removeBtn = document.createElement("button");
         removeBtn.className = "small secondary";
         removeBtn.textContent = "Remove";
@@ -174,15 +182,15 @@
         const lower = clause.toLowerCase();
         const isSavingsPhrase = /\b(saving|savings|rest|remainder|remaining|keep)\b/.test(lower);
 
-        // Extract the address FIRST and search for the percentage in what's left —
+        // Extract the address FIRST and search for the percentage in what's left:
         // a 0x address is full of digit characters, so matching digits against the
         // raw clause can pick up e.g. the "0" in "0x..." instead of the real "30%".
         const addrMatch = clause.match(/0x[a-fA-F0-9]{40}/);
         const textForPct = addrMatch ? clause.replace(addrMatch[0], "") : clause;
-        const pctMatch = textForPct.match(/(\d+(?:\.\d+)?)\s*%/); // require an explicit % — avoids bare-number ambiguity
+        const pctMatch = textForPct.match(/(\d+(?:\.\d+)?)\s*%/); // require an explicit %, avoids bare-number ambiguity
 
         if (isSavingsPhrase && !pctMatch) {
-          // "rest stays as savings" — no rule needed, the vault does this automatically.
+          // "rest stays as savings": no rule needed, the vault does this automatically.
           continue;
         }
         if (!pctMatch) {
@@ -195,7 +203,7 @@
           continue;
         }
         if (isSavingsPhrase) {
-          warnings.push(`Note: "${clause}" mentions savings with a percentage — a vault automatically keeps any unallocated remainder as savings, so an explicit savings rule is usually unnecessary.`);
+          warnings.push(`Note: "${clause}" mentions savings with a percentage. A vault automatically keeps any unallocated remainder as savings, so an explicit savings rule is usually unnecessary.`);
           continue;
         }
 
@@ -212,7 +220,7 @@
           }
         }
         if (!recipient) {
-          warnings.push(`Found ${pct}% but no known recipient in: "${clause}" — add them below or include a 0x address directly.`);
+          warnings.push(`Found ${pct}% but no known recipient in: "${clause}". Add them below or include a 0x address directly.`);
           continue;
         }
         rules.push({ recipient, label, pct });
@@ -220,7 +228,7 @@
 
       const totalPct = rules.reduce((sum, r) => sum + r.pct, 0);
       if (totalPct > 100) {
-        warnings.push(`Total allocated (${totalPct}%) exceeds 100% — remove or reduce a rule before signing.`);
+        warnings.push(`Total allocated (${totalPct}%) exceeds 100%. Remove or reduce a rule before signing.`);
       }
       return { rules, warnings };
     }
@@ -349,7 +357,7 @@
       if (!account) return;
       try {
         const data = buildCalldata();
-        setStatus("Sending — check your wallet for the confirmation prompt...");
+        setStatus("Sending. Check your wallet for the confirmation prompt...");
         const txHash = await window.ethereum.request({
           method: "eth_sendTransaction",
           params: [{ from: account, to: vaultInput.value, data, value: "0x0" }],
