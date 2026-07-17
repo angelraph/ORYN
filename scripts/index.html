@@ -64,7 +64,14 @@
     text-transform: uppercase; color: var(--accent-strong); background: var(--accent-bg);
     padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
   }
-  h1 { font-size: clamp(32px, 6vw, 48px); font-weight: 700; line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.02em; }
+  @keyframes heroSlideIn {
+    from { transform: translateY(28px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  h1 {
+    font-size: clamp(32px, 6vw, 48px); font-weight: 700; line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.02em;
+    animation: heroSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
   .hero p.sub { font-size: clamp(16px, 2.4vw, 19px); font-weight: 500; color: var(--muted); max-width: 620px; margin: 0 auto 32px; }
   .cta-row { display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; margin-bottom: 40px; }
   @media (min-width: 480px) { .cta-row { flex-direction: row; } }
@@ -327,6 +334,7 @@
         <div class="wallet-bar">
           <span class="addr" id="walletStatus">Not connected</span>
           <button class="btn small primary" id="connectBtn">Connect Wallet</button>
+          <button class="btn small secondary" id="disconnectBtn" style="display:none">Disconnect</button>
         </div>
 
         <!-- DEPOSIT -->
@@ -443,7 +451,31 @@
   let account = null;
   const walletStatus = document.getElementById("walletStatus");
   const connectBtn = document.getElementById("connectBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
   const sendButtons = ["depApproveBtn", "depSendBtn", "rulesSendBtn", "wdSendBtn", "fundSendBtn"];
+
+  function resetWalletUI() {
+    account = null;
+    walletStatus.textContent = "Not connected";
+    sendButtons.forEach((id) => { document.getElementById(id).disabled = true; });
+    connectBtn.style.display = "";
+    disconnectBtn.style.display = "none";
+    updateRulesTotalsAndCalldata();
+  }
+
+  disconnectBtn.addEventListener("click", async () => {
+    try {
+      await window.ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch {
+      // Not every wallet supports permission revocation (EIP-2255); this is best-effort.
+      // Either way, the app forgets the account below so no further actions can be signed
+      // from this page until the user reconnects.
+    }
+    resetWalletUI();
+  });
 
   connectBtn.addEventListener("click", async () => {
     if (!window.ethereum) {
@@ -474,6 +506,8 @@
 
       walletStatus.textContent = account;
       sendButtons.forEach((id) => { document.getElementById(id).disabled = false; });
+      connectBtn.style.display = "none";
+      disconnectBtn.style.display = "";
       const wdTo = document.getElementById("wdTo");
       if (!wdTo.value) wdTo.value = account;
       updateRulesTotalsAndCalldata();
