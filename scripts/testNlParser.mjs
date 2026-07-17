@@ -1,5 +1,5 @@
-// Extracted copy of the parser/calldata logic from scripts/set-rules.html for
-// headless testing (no DOM/browser needed).
+// Extracted copy of the parser/calldata logic from scripts/index.html (Set Rules tab)
+// for headless testing (no DOM/browser needed).
 
 function parseNaturalLanguage(text, addressBook) {
   const warnings = [];
