@@ -359,6 +359,36 @@
     }
     throw new Error("Still pending after 2 minutes — check Celoscan, then try Deposit again once Approve is confirmed.");
   }
+  // A mistyped or badly-pasted vault address (dropped char, stray space, wrong contract)
+  // never reverts when sent deposit()/approve() calldata — it just silently no-ops, which
+  // wallets show as a successful simulation with no balance change. Catch it before we
+  // ever build a transaction: the address must be well-formed, have contract code, and
+  // actually be an ORYN vault for the expected token.
+  const SELECTOR_TOKEN = "fc0c546a";
+  function isValidAddress(addr) { return /^0x[0-9a-fA-F]{40}$/.test(addr); }
+  async function ethGetCode(addr) {
+    const res = await fetch(RPC, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getCode", params: [addr, "latest"] }),
+    });
+    const json = await res.json();
+    if (!json.result) throw new Error(json.error ? json.error.message : "no result");
+    return json.result;
+  }
+  async function assertRealVault(addr, expectedToken) {
+    if (!isValidAddress(addr)) {
+      throw new Error("That's not a valid address — check for a dropped character or a stray space from copy-pasting, and make sure it's the full 0x… vault address.");
+    }
+    const code = await ethGetCode(addr);
+    if (!code || code === "0x") {
+      throw new Error("No contract exists at that address on Celo mainnet — double-check the vault address before sending funds.");
+    }
+    const tokenWord = await ethCallPublic(addr, SELECTOR_TOKEN);
+    const tokenAddr = "0x" + tokenWord.toString(16).padStart(40, "0");
+    if (tokenAddr.toLowerCase() !== expectedToken.toLowerCase()) {
+      throw new Error("That address isn't an ORYN vault for this token — double-check it before sending funds.");
+    }
+  }
 
   let account = null;
   const walletStatus = document.getElementById("walletStatus");
@@ -601,11 +631,15 @@
     if (!account) return;
     const depSendBtn = document.getElementById("depSendBtn");
     try {
+      const vaultAddr = depVault.value.trim();
+      const tokenAddr = depToken.value.trim();
       const amount = parseUnitsDecimal(depAmount.value, 18);
-      const data = "0x" + SELECTOR_APPROVE + encodeAddress(depVault.value) + encodeUint256(amount);
-      setTxPending(depStatus, "Sending approve() — check your wallet…");
+      setTxPending(depStatus, "Checking vault address…");
       depSendBtn.disabled = true;
-      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depToken.value, data, value: "0x0" }] });
+      await assertRealVault(vaultAddr, tokenAddr);
+      const data = "0x" + SELECTOR_APPROVE + encodeAddress(vaultAddr) + encodeUint256(amount);
+      setTxPending(depStatus, "Sending approve() — check your wallet…");
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data, value: "0x0" }] });
       setTxPending(depStatus, "Approve sent — waiting for on-chain confirmation…");
       await waitForReceipt(txHash);
       setTxSuccess(depStatus, txHash, "Approved. Now click Deposit.");
@@ -616,16 +650,20 @@
   document.getElementById("depSendBtn").addEventListener("click", async () => {
     if (!account) return;
     try {
+      const vaultAddr = depVault.value.trim();
+      const tokenAddr = depToken.value.trim();
       const amount = parseUnitsDecimal(depAmount.value, 18);
+      setTxPending(depStatus, "Checking vault address…");
+      await assertRealVault(vaultAddr, tokenAddr);
       setTxPending(depStatus, "Checking allowance…");
-      const allowance = await ethCallPublic(depToken.value, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(depVault.value));
+      const allowance = await ethCallPublic(tokenAddr, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(vaultAddr));
       if (allowance < amount) {
         setTxError(depStatus, new Error("Allowance isn't confirmed on-chain yet. Click Approve and wait for it to confirm, then Deposit."));
         return;
       }
       const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
       setTxPending(depStatus, "Sending deposit() — check your wallet…");
-      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depVault.value, data, value: "0x0" }] });
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: vaultAddr, data, value: "0x0" }] });
       setTxSuccess(depStatus, txHash, "Deposited. ORYN's agent should detect this within ~15s.");
     } catch (err) { setTxError(depStatus, err); }
   });
