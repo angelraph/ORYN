@@ -375,12 +375,23 @@
     if (!json.result) throw new Error(json.error ? json.error.message : "no result");
     return json.result;
   }
-  async function assertRealVault(addr, expectedToken) {
+  async function assertRealVault(addr, expectedToken, connectedAccount) {
     if (!isValidAddress(addr)) {
       throw new Error("That's not a valid address — check for a dropped character or a stray space from copy-pasting, and make sure it's the full 0x… vault address.");
     }
     const code = await ethGetCode(addr);
     if (!code || code === "0x") {
+      // The single most common version of this mistake: pasting your own wallet
+      // address (which obviously has no vault contract at it) instead of your
+      // vault's address. Look up the real one and hand it straight back.
+      if (connectedAccount && addr.toLowerCase() === connectedAccount.toLowerCase()) {
+        let hint = " You don't have a vault yet — use the banner above to create one.";
+        try {
+          const myVault = await fetchMyVault(connectedAccount);
+          if (myVault) hint = ` Your vault is ${myVault} — use that instead.`;
+        } catch {}
+        throw new Error("That's your wallet address, not your vault address." + hint);
+      }
       throw new Error("No contract exists at that address on Celo mainnet — double-check the vault address before sending funds.");
     }
     const tokenWord = await ethCallPublic(addr, SELECTOR_TOKEN);
@@ -636,7 +647,7 @@
       const amount = parseUnitsDecimal(depAmount.value, 18);
       setTxPending(depStatus, "Checking vault address…");
       depSendBtn.disabled = true;
-      await assertRealVault(vaultAddr, tokenAddr);
+      await assertRealVault(vaultAddr, tokenAddr, account);
       const data = "0x" + SELECTOR_APPROVE + encodeAddress(vaultAddr) + encodeUint256(amount);
       setTxPending(depStatus, "Sending approve() — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data, value: "0x0" }] });
@@ -654,7 +665,7 @@
       const tokenAddr = depToken.value.trim();
       const amount = parseUnitsDecimal(depAmount.value, 18);
       setTxPending(depStatus, "Checking vault address…");
-      await assertRealVault(vaultAddr, tokenAddr);
+      await assertRealVault(vaultAddr, tokenAddr, account);
       setTxPending(depStatus, "Checking allowance…");
       const allowance = await ethCallPublic(tokenAddr, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(vaultAddr));
       if (allowance < amount) {
