@@ -609,7 +609,7 @@
 
   function loadAddressBook() {
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
-    return { designer: "0x4a8B3B1BBE395844d8A79f3Cf33554873b388203" };
+    return {};
   }
   function saveAddressBook(book) { localStorage.setItem(STORAGE_KEY, JSON.stringify(book)); }
   function renderAddressBook() {
