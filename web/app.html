@@ -102,6 +102,14 @@
     padding: 14px 20px; background: var(--bg-alt); border-bottom: 1px solid var(--border); font-size: 13px;
   }
   .wallet-bar .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
+  .vault-bar {
+    display: none; flex-direction: column; align-items: stretch; gap: 0;
+    padding: 12px 20px; background: var(--bg-alt); border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .vault-bar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .vault-bar.warn .vault-bar-row { color: var(--accent-strong); }
+  .vault-bar .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .vault-bar .tx-card { margin-top: 10px; }
   .tab-panel { padding: 24px 20px; }
   .tab-panel[hidden] { display: none; }
   .field { margin: 14px 0; }
@@ -201,11 +209,15 @@
         <button class="btn small primary" id="connectBtn">Connect Wallet</button>
         <button class="btn small secondary" id="disconnectBtn" style="display:none">Disconnect</button>
       </div>
+      <div class="vault-bar" id="vaultBar">
+        <div class="vault-bar-row" id="vaultBarRow"></div>
+        <div class="tx-card" id="vaultCreateStatus"></div>
+      </div>
 
       <!-- DEPOSIT -->
       <div class="tab-panel" id="panel-deposit">
-        <p class="tab-help">Pay into a vault: approve the token, then deposit. Two transactions, both shown before you confirm.</p>
-        <div class="field"><label>Vault address</label><input id="depVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+        <p class="tab-help">Pay into a vault: approve the token, then deposit. Two transactions, both shown before you confirm. Paying someone else's invoice? Paste their vault address below instead of your own.</p>
+        <div class="field"><label>Vault address</label><input id="depVault" placeholder="Connect your wallet to auto-fill" /></div>
         <div class="field"><label>Token address (cUSD, 18 decimals)</label><input id="depToken" value="0x765DE816845861e75A25fCA122bb6898B8B1282a" /></div>
         <div class="field"><label>Amount (cUSD)</label><input id="depAmount" value="1.00" /></div>
         <div class="panel-actions">
@@ -218,7 +230,7 @@
       <!-- SET RULES -->
       <div class="tab-panel" id="panel-rules" hidden>
         <p class="tab-help">Describe your split in plain English. ORYN parses it into a table you review and edit before signing.</p>
-        <div class="field"><label>Vault address</label><input id="rulesVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+        <div class="field"><label>Vault address</label><input id="rulesVault" placeholder="Connect your wallet to auto-fill" /></div>
 
         <div class="field">
           <label>Known recipients (saved in this browser only)</label>
@@ -254,7 +266,7 @@
       <!-- WITHDRAW -->
       <div class="tab-panel" id="panel-withdraw" hidden>
         <p class="tab-help">Owner-only. Pulls funds out of your vault's savings balance to any address.</p>
-        <div class="field"><label>Vault address</label><input id="wdVault" value="0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E" /></div>
+        <div class="field"><label>Vault address</label><input id="wdVault" placeholder="Connect your wallet to auto-fill" /></div>
         <button class="btn secondary" id="wdCheckBtn" type="button">Check savings balance</button>
         <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount">···</strong></div>
         <div class="field"><label>Amount to withdraw (cUSD)</label><input id="wdAmount" placeholder="e.g. 0.01" /></div>
@@ -296,9 +308,16 @@
   // ============ Shared constants & helpers ============
   const CELO_CHAIN_ID_HEX = "0xa4ec"; // 42220
   const RPC = "https://forno.celo.org";
+  const FACTORY_ADDRESS = "0xcb45e24d147262302b6e7dac579e8ae4d879ef19";
+  const SELECTOR_VAULT_OF = "0709df45";
+  const SELECTOR_CREATE_VAULT = "cc92d31c";
+  const DEFAULT_TOKEN = "0x765DE816845861e75A25fCA122bb6898B8B1282a"; // cUSD
+  const DEFAULT_AGENT = "0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26"; // ORYN's agent wallet
+  const ZERO_ADDRESS = "0x" + "0".repeat(40);
 
   function padHex(hex, bytes) { return hex.replace(/^0x/, "").padStart(bytes * 2, "0"); }
   function encodeAddress(addr) { return padHex(addr, 32); }
+  function addressFromBigInt(v) { return "0x" + v.toString(16).padStart(40, "0"); }
   function encodeUint256(bigintValue) { return padHex(bigintValue.toString(16), 32); }
   function parseUnitsDecimal(value, decimals) {
     const [whole, frac = ""] = value.trim().split(".");
@@ -335,6 +354,74 @@
     connectBtn.style.display = "";
     disconnectBtn.style.display = "none";
     updateRulesTotalsAndCalldata();
+    refreshMyVault();
+  }
+
+  // ============ My Vault (owner-only tabs must never default to someone else's vault) ============
+  const vaultBar = document.getElementById("vaultBar");
+  const vaultBarRow = document.getElementById("vaultBarRow");
+  const vaultCreateStatus = document.getElementById("vaultCreateStatus");
+  const vaultFieldIds = ["depVault", "rulesVault", "wdVault"];
+
+  function fillVaultFields(addr) { vaultFieldIds.forEach((id) => { document.getElementById(id).value = addr; }); }
+
+  async function fetchMyVault(owner) {
+    const value = await ethCallPublic(FACTORY_ADDRESS, SELECTOR_VAULT_OF + encodeAddress(owner));
+    const addr = addressFromBigInt(value);
+    return addr === ZERO_ADDRESS ? null : addr;
+  }
+
+  async function waitForVault(owner, { intervalMs = 2500, timeoutMs = 90000 } = {}) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const v = await fetchMyVault(owner);
+      if (v) return v;
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return null;
+  }
+
+  function renderVaultBar(state, data) {
+    vaultBar.style.display = "flex";
+    vaultBar.className = "vault-bar" + (state === "missing" || state === "error" ? " warn" : "");
+    if (state === "checking") {
+      vaultBarRow.textContent = "Checking your vault…";
+    } else if (state === "found") {
+      vaultBarRow.innerHTML = `Your vault <span class="addr">${shortHash(data)}</span> <a class="tx-link" href="https://celoscan.io/address/${data}" target="_blank" rel="noopener">Celoscan ↗</a>`;
+      fillVaultFields(data);
+    } else if (state === "missing") {
+      vaultBarRow.innerHTML = `No vault yet for this wallet — deposits to your own vault and any Set Rules / Withdraw action need one. <button class="btn small primary" id="createVaultBtn" type="button">Create my vault</button>`;
+      vaultFieldIds.forEach((id) => { document.getElementById(id).value = ""; });
+      document.getElementById("createVaultBtn").addEventListener("click", createMyVault);
+    } else if (state === "error") {
+      vaultBarRow.textContent = "Couldn't check your vault: " + data;
+    }
+  }
+
+  async function refreshMyVault() {
+    vaultCreateStatus.className = "tx-card"; vaultCreateStatus.innerHTML = "";
+    if (!account) { vaultBar.style.display = "none"; return; }
+    renderVaultBar("checking");
+    try {
+      const myVault = await fetchMyVault(account);
+      renderVaultBar(myVault ? "found" : "missing", myVault);
+    } catch (err) { renderVaultBar("error", cleanErrorMessage(err)); }
+  }
+
+  async function createMyVault() {
+    try {
+      setTxPending(vaultCreateStatus, "Creating your vault — check your wallet…");
+      const data = "0x" + SELECTOR_CREATE_VAULT + encodeAddress(DEFAULT_TOKEN) + encodeAddress(DEFAULT_AGENT);
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: FACTORY_ADDRESS, data, value: "0x0" }] });
+      setTxPending(vaultCreateStatus, "Vault transaction sent — waiting for confirmation…");
+      const myVault = await waitForVault(account);
+      if (myVault) {
+        setTxSuccess(vaultCreateStatus, txHash, "Vault created.");
+        renderVaultBar("found", myVault);
+      } else {
+        setTxError(vaultCreateStatus, new Error("Sent, but not confirmed yet — reload this page in a minute to see your vault."));
+      }
+    } catch (err) { setTxError(vaultCreateStatus, err); }
   }
 
   disconnectBtn.addEventListener("click", async () => {
@@ -385,10 +472,22 @@
       const wdTo = document.getElementById("wdTo");
       if (!wdTo.value) wdTo.value = account;
       updateRulesTotalsAndCalldata();
+      refreshMyVault();
     } catch (err) {
       walletStatus.textContent = "Connect failed: " + (err && err.message ? err.message : err);
     }
   });
+
+  if (window.ethereum && window.ethereum.on) {
+    window.ethereum.on("accountsChanged", (accounts) => {
+      if (accounts.length === 0) { resetWalletUI(); return; }
+      account = accounts[0];
+      walletStatus.textContent = account;
+      const wdTo = document.getElementById("wdTo");
+      wdTo.value = account;
+      refreshMyVault();
+    });
+  }
 
   // ============ Tabs ============
   const tabButtons = document.querySelectorAll("[data-tab-btn]");
