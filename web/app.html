@@ -116,6 +116,33 @@
   .status-box { margin-top: 14px; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
   .status-box.ok { color: var(--ok); }
   .status-box.err { color: var(--err); }
+  .status-box:empty { margin-top: 0; }
+
+  /* ---- Transaction result card ---- */
+  @keyframes txCardIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .tx-card {
+    display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 14px;
+    border-radius: 10px; background: var(--bg-alt); border: 1px solid var(--border);
+    border-left: 3px solid var(--muted); animation: txCardIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .tx-card:empty { display: none; }
+  .tx-card.pending { border-left-color: var(--pending); }
+  .tx-card.ok { border-left-color: var(--ok); }
+  .tx-card.err { border-left-color: var(--err); }
+  .tx-card .tx-icon { flex: none; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .tx-card.ok .tx-icon { color: var(--ok); }
+  .tx-card.err .tx-icon { color: var(--err); }
+  .tx-card .tx-body { flex: 1; min-width: 0; }
+  .tx-card .tx-title { font-weight: 600; font-size: 13.5px; color: var(--text); }
+  .tx-card .tx-note { color: var(--muted); margin-top: 3px; font-size: 12.5px; line-height: 1.45; }
+  .tx-card .tx-hash-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .tx-card .tx-hash { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--border); padding: 3px 7px; border-radius: 6px; color: var(--text); }
+  .tx-card .tx-link { font-size: 12.5px; font-weight: 600; text-decoration: none; color: var(--accent-strong); }
+  .tx-card .tx-copy { font-size: 11.5px; background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 3px 8px; cursor: pointer; font-family: inherit; }
+  .tx-card .tx-copy:hover { color: var(--text); border-color: var(--muted); }
+  .tx-card .tx-copy.copied { color: var(--ok); border-color: var(--ok); }
+  .tx-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(251,204,92,0.3); border-top-color: var(--pending); animation: txSpin 0.7s linear infinite; }
+  @keyframes txSpin { to { transform: rotate(360deg); } }
   .warn-box { color: var(--accent-strong); background: var(--accent-bg); padding: 8px 10px; border-radius: 8px; font-size: 12.5px; margin-top: 8px; }
   .balance-box { background: var(--bg-alt); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 13.5px; }
   .balance-box strong { font-size: 17px; display: block; margin-top: 2px; }
@@ -400,15 +427,58 @@
 
   function setStatus(el, msg, cls) { el.textContent = msg; el.className = "status-box " + (cls || ""); }
 
+  const TX_ICON_OK = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M6 10.2l2.6 2.6L14 7.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const TX_ICON_ERR = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+
+  function shortHash(hash) { return hash.length > 18 ? hash.slice(0, 10) + "…" + hash.slice(-6) : hash; }
+
+  function cleanErrorMessage(err) {
+    let msg = (err && err.message) ? err.message : String(err);
+    msg = msg.replace(/\s*\{"code":.*$/s, "").trim(); // strip verbose JSON-RPC noise some wallets append
+    if (/user rejected|user denied/i.test(msg)) return "You rejected the request in your wallet.";
+    if (/insufficient funds/i.test(msg)) return "Insufficient CELO in your wallet to cover gas.";
+    return msg;
+  }
+
+  function renderTxCard(el, state, title, note, txHash) {
+    el.className = "tx-card " + state;
+    const icon = state === "pending" ? '<div class="tx-spinner"></div>' : (state === "ok" ? TX_ICON_OK : TX_ICON_ERR);
+    const hashRow = txHash
+      ? `<div class="tx-hash-row">
+           <span class="tx-hash">${shortHash(txHash)}</span>
+           <button type="button" class="tx-copy">Copy</button>
+           <a class="tx-link" href="https://celoscan.io/tx/${txHash}" target="_blank" rel="noopener">View on Celoscan ↗</a>
+         </div>`
+      : "";
+    el.innerHTML = `<div class="tx-icon">${icon}</div><div class="tx-body"><div class="tx-title"></div><div class="tx-note"></div>${hashRow}</div>`;
+    el.querySelector(".tx-title").textContent = title;
+    const noteEl = el.querySelector(".tx-note");
+    if (note) { noteEl.textContent = note; } else { noteEl.remove(); }
+    const copyBtn = el.querySelector(".tx-copy");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(txHash);
+          copyBtn.textContent = "Copied"; copyBtn.classList.add("copied");
+          setTimeout(() => { copyBtn.textContent = "Copy"; copyBtn.classList.remove("copied"); }, 1500);
+        } catch {}
+      });
+    }
+  }
+
+  function setTxPending(el, title) { renderTxCard(el, "pending", title); }
+  function setTxSuccess(el, txHash, note) { renderTxCard(el, "ok", "Transaction sent", note, txHash); }
+  function setTxError(el, err) { renderTxCard(el, "err", "Transaction failed", cleanErrorMessage(err)); }
+
   document.getElementById("depApproveBtn").addEventListener("click", async () => {
     if (!account) return;
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
       const data = "0x" + SELECTOR_APPROVE + encodeAddress(depVault.value) + encodeUint256(amount);
-      setStatus(depStatus, "Sending approve(). Check your wallet...");
+      setTxPending(depStatus, "Sending approve() — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depToken.value, data, value: "0x0" }] });
-      setStatus(depStatus, "Approved. Tx: " + txHash + "\nNow click Deposit.", "ok");
-    } catch (err) { setStatus(depStatus, "Approve failed: " + (err && err.message ? err.message : err), "err"); }
+      setTxSuccess(depStatus, txHash, "Approved. Now click Deposit.");
+    } catch (err) { setTxError(depStatus, err); }
   });
 
   document.getElementById("depSendBtn").addEventListener("click", async () => {
@@ -416,10 +486,10 @@
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
       const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
-      setStatus(depStatus, "Sending deposit(). Check your wallet...");
+      setTxPending(depStatus, "Sending deposit() — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depVault.value, data, value: "0x0" }] });
-      setStatus(depStatus, "Deposited! Tx: " + txHash + "\nORYN's agent should detect this within ~15s.", "ok");
-    } catch (err) { setStatus(depStatus, "Deposit failed: " + (err && err.message ? err.message : err), "err"); }
+      setTxSuccess(depStatus, txHash, "Deposited. ORYN's agent should detect this within ~15s.");
+    } catch (err) { setTxError(depStatus, err); }
   });
 
   // ============ SET RULES tab ============
@@ -548,10 +618,10 @@
     if (!account) return;
     try {
       const data = buildRulesCalldata();
-      setStatus(rulesStatus, "Sending. Check your wallet...");
+      setTxPending(rulesStatus, "Sending — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: rulesVault.value, data, value: "0x0" }] });
-      setStatus(rulesStatus, "Sent! Tx: " + txHash, "ok");
-    } catch (err) { setStatus(rulesStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+      setTxSuccess(rulesStatus, txHash, "Rules updated.");
+    } catch (err) { setTxError(rulesStatus, err); }
   });
 
   // ============ WITHDRAW tab ============
@@ -578,10 +648,10 @@
       const amount = parseUnitsDecimal(wdAmount.value, 18);
       const to = wdTo.value || account;
       const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
-      setStatus(wdStatus, "Sending. Check your wallet...");
+      setTxPending(wdStatus, "Sending — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: wdVault.value, data, value: "0x0" }] });
-      setStatus(wdStatus, "Sent! Tx: " + txHash, "ok");
-    } catch (err) { setStatus(wdStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+      setTxSuccess(wdStatus, txHash, "Withdrawal sent.");
+    } catch (err) { setTxError(wdStatus, err); }
   });
 
   // ============ FUND AGENT tab ============
@@ -596,10 +666,10 @@
     try {
       const amount = parseUnitsDecimal(fundAmount.value, 6); // USDC = 6 decimals
       const data = "0x" + SELECTOR_TRANSFER + encodeAddress(fundAgent.value) + encodeUint256(amount);
-      setStatus(fundStatus, "Sending. Check your wallet...");
+      setTxPending(fundStatus, "Sending — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: fundToken.value, data, value: "0x0" }] });
-      setStatus(fundStatus, "Sent! Tx: " + txHash, "ok");
-    } catch (err) { setStatus(fundStatus, "Transaction failed: " + (err && err.message ? err.message : err), "err"); }
+      setTxSuccess(fundStatus, txHash, "Agent funded.");
+    } catch (err) { setTxError(fundStatus, err); }
   });
 </script>
 
