@@ -340,6 +340,25 @@
     if (!json.result) throw new Error(json.error ? json.error.message : "no result");
     return BigInt(json.result);
   }
+  // Polls until a tx is mined. Needed before letting a dependent tx (e.g. deposit
+  // after approve) go out — otherwise it can be sent while the allowance is still
+  // zero on-chain, and the wallet reports that as a failing/insufficient-balance tx.
+  async function waitForReceipt(txHash, { intervalMs = 2000, timeoutMs = 120000 } = {}) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const res = await fetch(RPC, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionReceipt", params: [txHash] }),
+      });
+      const json = await res.json();
+      if (json.result) {
+        if (json.result.status === "0x0") throw new Error("Approve transaction reverted on-chain.");
+        return json.result;
+      }
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    throw new Error("Still pending after 2 minutes — check Celoscan, then try Deposit again once Approve is confirmed.");
+  }
 
   let account = null;
   const walletStatus = document.getElementById("walletStatus");
@@ -519,6 +538,7 @@
   // ============ DEPOSIT tab ============
   const SELECTOR_APPROVE = "095ea7b3";
   const SELECTOR_DEPOSIT = "b6b55f25";
+  const SELECTOR_ALLOWANCE = "dd62ed3e";
   const depVault = document.getElementById("depVault");
   const depToken = document.getElementById("depToken");
   const depAmount = document.getElementById("depAmount");
@@ -571,19 +591,30 @@
 
   document.getElementById("depApproveBtn").addEventListener("click", async () => {
     if (!account) return;
+    const depSendBtn = document.getElementById("depSendBtn");
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
       const data = "0x" + SELECTOR_APPROVE + encodeAddress(depVault.value) + encodeUint256(amount);
       setTxPending(depStatus, "Sending approve() — check your wallet…");
+      depSendBtn.disabled = true;
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depToken.value, data, value: "0x0" }] });
+      setTxPending(depStatus, "Approve sent — waiting for on-chain confirmation…");
+      await waitForReceipt(txHash);
       setTxSuccess(depStatus, txHash, "Approved. Now click Deposit.");
     } catch (err) { setTxError(depStatus, err); }
+    finally { depSendBtn.disabled = false; }
   });
 
   document.getElementById("depSendBtn").addEventListener("click", async () => {
     if (!account) return;
     try {
       const amount = parseUnitsDecimal(depAmount.value, 18);
+      setTxPending(depStatus, "Checking allowance…");
+      const allowance = await ethCallPublic(depToken.value, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(depVault.value));
+      if (allowance < amount) {
+        setTxError(depStatus, new Error("Allowance isn't confirmed on-chain yet. Click Approve and wait for it to confirm, then Deposit."));
+        return;
+      }
       const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
       setTxPending(depStatus, "Sending deposit() — check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: depVault.value, data, value: "0x0" }] });
