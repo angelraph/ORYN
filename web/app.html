@@ -380,9 +380,17 @@
   const vaultBar = document.getElementById("vaultBar");
   const vaultBarRow = document.getElementById("vaultBarRow");
   const vaultCreateStatus = document.getElementById("vaultCreateStatus");
-  const vaultFieldIds = ["depVault", "rulesVault", "wdVault"];
+  // Set Rules / Withdraw are owner-only — always mirror "my vault" there. Deposit is NOT
+  // owner-only (anyone pays into anyone's vault), so it's deliberately excluded: it only
+  // gets a convenience prefill (below, when empty) and is never overwritten or cleared,
+  // otherwise connecting a wallet here wipes out a manually-pasted payee vault address.
+  const vaultFieldIds = ["rulesVault", "wdVault"];
 
-  function fillVaultFields(addr) { vaultFieldIds.forEach((id) => { document.getElementById(id).value = addr; }); }
+  function fillVaultFields(addr) {
+    vaultFieldIds.forEach((id) => { document.getElementById(id).value = addr; });
+    const depVaultEl = document.getElementById("depVault");
+    if (!depVaultEl.value) depVaultEl.value = addr;
+  }
 
   async function fetchMyVault(owner) {
     const value = await ethCallPublic(FACTORY_ADDRESS, SELECTOR_VAULT_OF + encodeAddress(owner));
