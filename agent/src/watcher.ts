@@ -33,23 +33,29 @@ async function forEachChunk(
   }
 }
 
-async function discoverVaults(fromBlock: bigint, toBlock: bigint) {
-  await forEachChunk(fromBlock, toBlock, async (from, to) => {
-    const logs = await publicClient.getContractEvents({
-      address: FACTORY_ADDRESS,
-      abi: factoryAbi,
-      eventName: "VaultCreated",
-      fromBlock: from,
-      toBlock: to,
-    });
-    for (const log of logs) {
-      const vault = log.args.vault;
-      if (vault && !knownVaults.has(vault)) {
-        knownVaults.add(vault);
-        console.log(`[watcher] discovered vault: ${vault} (owner ${log.args.owner})`);
-      }
-    }
+// Reads the factory's own allVaults/vaultCount instead of scanning VaultCreated logs:
+// eth_getLogs against public RPCs has shown silent, non-erroring gaps on wide historical
+// ranges (confirmed live — a restart's log rescan missed a real vault entirely), which
+// would permanently drop that vault from being watched. Contract reads don't have that
+// failure mode.
+async function discoverVaults() {
+  const count = await publicClient.readContract({
+    address: FACTORY_ADDRESS!,
+    abi: factoryAbi,
+    functionName: "vaultCount",
   });
+  for (let i = BigInt(knownVaults.size); i < count; i++) {
+    const vault = await publicClient.readContract({
+      address: FACTORY_ADDRESS!,
+      abi: factoryAbi,
+      functionName: "allVaults",
+      args: [i],
+    });
+    if (!knownVaults.has(vault)) {
+      knownVaults.add(vault);
+      console.log(`[watcher] discovered vault: ${vault}`);
+    }
+  }
 }
 
 async function checkDeposits(fromBlock: bigint, toBlock: bigint) {
@@ -96,9 +102,9 @@ export async function runWatcher() {
     `[watcher] catching up from deploy block ${FACTORY_DEPLOY_BLOCK} to ${currentBlock} (factory ${FACTORY_ADDRESS})`,
   );
 
-  // Scan the full history on every start (not just since last run) so a restart
-  // after downtime never silently misses a vault or a deposit.
-  await discoverVaults(FACTORY_DEPLOY_BLOCK!, currentBlock);
+  // Scan the full deposit history on every start (not just since last run) so a
+  // restart after downtime never silently misses a deposit.
+  await discoverVaults();
   await checkDeposits(FACTORY_DEPLOY_BLOCK!, currentBlock);
 
   let lastBlock = currentBlock;
@@ -113,7 +119,7 @@ export async function runWatcher() {
       const latest = await publicClient.getBlockNumber();
       if (latest > lastBlock) {
         const fromBlock = lastBlock + 1n;
-        await discoverVaults(fromBlock, latest);
+        await discoverVaults();
         await checkDeposits(fromBlock, latest);
         lastBlock = latest;
       }
