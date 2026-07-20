@@ -1,7 +1,17 @@
 import "dotenv/config";
+import { webcrypto } from "node:crypto";
 import { createPublicClient, createWalletClient, fallback, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { celo } from "viem/chains";
+
+// @x402/evm's client needs the Web Crypto API on `globalThis.crypto`, which is only
+// global by default on Node 19+. Railway's build has picked an older Node, so every
+// x402 payment there failed with "Crypto API not available" (worked locally on newer
+// Node, which is why this was invisible in dev) — polyfill it regardless of runtime.
+if (!globalThis.crypto) {
+  // @ts-expect-error -- Node's webcrypto matches the DOM Crypto interface x402 expects.
+  globalThis.crypto = webcrypto;
+}
 
 const PRIMARY_RPC_URL = process.env.CELO_RPC_URL ?? "https://forno.celo.org";
 // forno.celo.org has shown intermittent timeouts; these back it up so a single
