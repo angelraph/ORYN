@@ -47,11 +47,11 @@ app.use(
       "POST /categorize": {
         accepts: {
           scheme: "exact",
-          // $0.001 USDC (6 decimals). extra.name/version are the EIP-712 domain for
+          // $0.01 USDC (6 decimals). extra.name/version are the EIP-712 domain for
           // USDC's transferWithAuthorization signature — required because Celo isn't
           // one of x402's "known" networks with a built-in domain lookup. Verified
           // on-chain via the token's own name()/version() calls, not guessed.
-          price: { asset: USDC_ADDRESS, amount: "1000", extra: { name: "USDC", version: "2" } },
+          price: { asset: USDC_ADDRESS, amount: "10000", extra: { name: "USDC", version: "2" } },
           network: CELO_NETWORK,
           payTo: PAY_TO,
         },
