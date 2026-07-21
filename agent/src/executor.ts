@@ -1,7 +1,6 @@
 import { encodeFunctionData, parseEventLogs } from "viem";
 import { vaultAbi } from "./lib/abi.js";
 import { sendTaggedTransaction } from "./lib/attribution.js";
-import { publicClient } from "./lib/celoClient.js";
 import { errMsg } from "./lib/errors.js";
 import { enqueueRetry } from "./lib/x402RetryQueue.js";
 import { categorizeDistribution } from "../../x402-service/client.js";
@@ -22,10 +21,9 @@ export async function distributeVault(vaultAddress: `0x${string}`) {
     args: [],
   });
 
-  const hash = await sendTaggedTransaction({ to: vaultAddress, data });
-  console.log(`[executor] distribute() on ${vaultAddress} -> ${hash}`);
+  const receipt = await sendTaggedTransaction({ to: vaultAddress, data });
+  console.log(`[executor] distribute() on ${vaultAddress} -> ${receipt.transactionHash}`);
 
-  const receipt = await publicClient.getTransactionReceipt({ hash });
   const distributedEvents = parseEventLogs({ abi: vaultAbi, eventName: "Distributed", logs: receipt.logs });
 
   for (const event of distributedEvents) {
@@ -46,5 +44,5 @@ export async function distributeVault(vaultAddress: `0x${string}`) {
     }
   }
 
-  return hash;
+  return receipt.transactionHash;
 }

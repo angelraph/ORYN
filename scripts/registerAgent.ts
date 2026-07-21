@@ -2,7 +2,6 @@ import "dotenv/config";
 import { encodeFunctionData, parseEventLogs } from "viem";
 import { identityRegistryAbi } from "../agent/src/lib/abi.js";
 import { sendTaggedTransaction } from "../agent/src/lib/attribution.js";
-import { publicClient } from "../agent/src/lib/celoClient.js";
 
 const IDENTITY_REGISTRY_ADDRESS = "0x8004a169fb4a3325136eb29fa0ceb6d2e539a432" as const;
 const CHAIN_ID = 42220;
@@ -35,11 +34,10 @@ function buildAgentRegistrationFile(agentId: bigint) {
 async function main() {
   // Step 1: mint the identity NFT (agentId assigned by the registry).
   const registerData = encodeFunctionData({ abi: identityRegistryAbi, functionName: "register", args: [] });
-  const registerHash = await sendTaggedTransaction({ to: IDENTITY_REGISTRY_ADDRESS, data: registerData });
-  console.log(`[register] tx: ${registerHash}`);
+  const registerReceipt = await sendTaggedTransaction({ to: IDENTITY_REGISTRY_ADDRESS, data: registerData });
+  console.log(`[register] tx: ${registerReceipt.transactionHash}`);
 
-  const receipt = await publicClient.getTransactionReceipt({ hash: registerHash });
-  const [registeredEvent] = parseEventLogs({ abi: identityRegistryAbi, eventName: "Registered", logs: receipt.logs });
+  const [registeredEvent] = parseEventLogs({ abi: identityRegistryAbi, eventName: "Registered", logs: registerReceipt.logs });
   if (!registeredEvent) throw new Error("Registered event not found in receipt");
 
   const agentId = registeredEvent.args.agentId;
@@ -52,8 +50,8 @@ async function main() {
     functionName: "setAgentURI",
     args: [agentId, agentURI],
   });
-  const setUriHash = await sendTaggedTransaction({ to: IDENTITY_REGISTRY_ADDRESS, data: setUriData });
-  console.log(`[setAgentURI] tx: ${setUriHash}`);
+  const setUriReceipt = await sendTaggedTransaction({ to: IDENTITY_REGISTRY_ADDRESS, data: setUriData });
+  console.log(`[setAgentURI] tx: ${setUriReceipt.transactionHash}`);
 
   console.log("\nAgentId:", agentId.toString());
   console.log("8004scan:", `https://8004scan.io/agents/celo/${agentId}`);

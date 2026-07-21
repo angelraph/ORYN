@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { toDataSuffix, verifyTx, type TxHash } from "@celo/attribution-tags";
-import { concatHex, type Hex } from "viem";
+import { concatHex, type Hex, type TransactionReceipt } from "viem";
 import { publicClient, walletClient } from "./celoClient.js";
 
 const ATTRIBUTION_TAG = process.env.ATTRIBUTION_TAG;
@@ -19,7 +19,7 @@ export async function sendTaggedTransaction(params: {
   data?: Hex;
   value?: bigint;
   extraCodes?: string[];
-}): Promise<TxHash> {
+}): Promise<TransactionReceipt> {
   const codes = params.extraCodes ? [...params.extraCodes, ATTRIBUTION_TAG!] : ATTRIBUTION_TAG!;
   const suffix = toDataSuffix(codes);
   const baseData = params.data ?? "0x";
@@ -31,8 +31,11 @@ export async function sendTaggedTransaction(params: {
     value: params.value ?? 0n,
   });
 
-  await publicClient.waitForTransactionReceipt({ hash });
-  return hash;
+  // Return the receipt we already waited for instead of just the hash — callers
+  // used to re-fetch it with a second, non-waiting getTransactionReceipt call,
+  // which could race a lagging backend node behind the public RPC and throw
+  // "not found" on a transaction that had, in fact, already succeeded.
+  return publicClient.waitForTransactionReceipt({ hash });
 }
 
 /** Confirms a sent transaction actually carries our registered attribution tag. */

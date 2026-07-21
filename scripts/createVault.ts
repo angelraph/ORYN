@@ -2,7 +2,7 @@ import "dotenv/config";
 import { encodeFunctionData, parseEventLogs } from "viem";
 import { factoryAbi } from "../agent/src/lib/abi.js";
 import { sendTaggedTransaction } from "../agent/src/lib/attribution.js";
-import { publicClient, agentAccount } from "../agent/src/lib/celoClient.js";
+import { agentAccount } from "../agent/src/lib/celoClient.js";
 
 const FACTORY_ADDRESS = process.env.VAULT_FACTORY_ADDRESS as `0x${string}` | undefined;
 const CUSD_ADDRESS = process.env.CUSD_ADDRESS as `0x${string}`;
@@ -19,10 +19,9 @@ async function main() {
     args: [OWNER_ADDRESS!, CUSD_ADDRESS, agentAccount.address],
   });
 
-  const hash = await sendTaggedTransaction({ to: FACTORY_ADDRESS!, data });
-  console.log(`[createVault] tx: ${hash}`);
+  const receipt = await sendTaggedTransaction({ to: FACTORY_ADDRESS!, data });
+  console.log(`[createVault] tx: ${receipt.transactionHash}`);
 
-  const receipt = await publicClient.getTransactionReceipt({ hash });
   const [event] = parseEventLogs({ abi: factoryAbi, eventName: "VaultCreated", logs: receipt.logs });
   if (!event) throw new Error("VaultCreated event not found in receipt");
 
