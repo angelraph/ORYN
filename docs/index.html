@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: The Autonomous Treasury Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1210;
+    --bg-alt: #131916;
+    --card: #1a221d;
+    --text: #f8f9fa;
+    --muted: #93a39a;
+    --border: #2a352e;
+    --accent: #35D07F;
+    --accent-strong: #FBCC5C;
+    --accent-bg: rgba(53,208,127,0.14);
+    --code-bg: #131916;
+    --ok: #35D07F;
+    --err: #ff5252;
+    --pending: #FBCC5C;
+    --grad-amethyst: linear-gradient(135deg, #2E3338, #5EA33B);
+    --grad-liquidity: linear-gradient(135deg, #5EA33B, #FBCC5C);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 32px rgba(53,208,127,0.10);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); position: relative; overflow-x: hidden;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-weight: 400; line-height: 1.55; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  body::before {
+    content: ""; position: fixed; top: -20%; left: 50%; width: 900px; height: 900px;
+    transform: translateX(-50%); background: var(--grad-amethyst); opacity: 0.16;
+    filter: blur(120px); border-radius: 50%; z-index: 0; pointer-events: none;
+  }
+  a { color: var(--accent-strong); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+  @keyframes headerSlideIn {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  header.site {
+    position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    border-bottom: 1px solid var(--border);
+    animation: headerSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
+  .logo { font-weight: 700; font-size: 18px; letter-spacing: 0.02em; text-decoration: none; color: var(--text); }
+  nav.top { display: none; gap: 20px; font-size: 14px; }
+  nav.top a { color: var(--muted); text-decoration: none; cursor: pointer; }
+  nav.top a:hover { color: var(--text); }
+  @media (min-width: 640px) { nav.top { display: flex; } }
+
+  .hero { padding: 56px 0 40px; text-align: center; position: relative; z-index: 1; }
+  .eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent-strong); background: var(--accent-bg);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
+  }
+  @keyframes heroSlideIn {
+    from { transform: translateY(28px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  h1 {
+    font-size: clamp(32px, 6vw, 48px); font-weight: 700; line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.02em;
+    animation: heroSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+  .hero p.sub { font-size: clamp(16px, 2.4vw, 19px); font-weight: 500; color: var(--muted); max-width: 620px; margin: 0 auto 32px; }
+  .cta-row { display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; margin-bottom: 40px; }
+  @media (min-width: 480px) { .cta-row { flex-direction: row; } }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 22px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    text-decoration: none; min-height: 46px; border: 1px solid transparent; cursor: pointer;
+    width: 100%; font-family: inherit;
+  }
+  @media (min-width: 480px) { .btn:not(.block) { width: auto; } }
+  .btn.primary { background: var(--grad-amethyst); color: #ffffff; }
+  .btn.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.small { padding: 8px 14px; font-size: 13px; min-height: 36px; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-width: 620px; margin: 0 auto;
+  }
+  .stat { background: var(--card); padding: 16px 8px; text-align: center; }
+  .stat .num { display: block; font-size: clamp(16px, 3vw, 20px); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .label { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  section { padding: 48px 0; border-top: 1px solid var(--border); }
+  section.plain { border-top: none; padding-top: 0; }
+  h2 { font-size: clamp(22px, 3.4vw, 28px); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 12px; }
+  h2 .kicker { display: block; font-size: 13px; font-weight: 600; color: var(--accent-strong); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  p.lead { color: var(--muted); font-size: 16px; max-width: 620px; margin: 0 0 28px; }
+
+  .steps { display: grid; gap: 16px; }
+  .step {
+    display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow);
+  }
+  .step .n {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--accent-bg); color: var(--accent-strong);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
+  .step p { margin: 0 0 10px; color: var(--muted); font-size: 14.5px; }
+  .step a.tool-link { font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+  .step a.tool-link::after { content: " →"; }
+
+  .card-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: var(--shadow);
+  }
+
+  .req-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .req-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--muted); }
+  .req-list li .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+  .req-list li strong { color: var(--text); }
+
+  details.explainer { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px; margin-top: 16px; }
+  details.explainer summary { cursor: pointer; padding: 12px 0; font-size: 14px; font-weight: 600; }
+  details.explainer .content { padding-bottom: 16px; font-size: 14px; color: var(--muted); }
+  details.explainer .content p { margin: 8px 0; }
+
+  .trust-grid { display: grid; gap: 12px; }
+  .trust-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 14px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; font-size: 13.5px;
+  }
+  .trust-row .k { color: var(--muted); }
+  .trust-row .v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .trust-row a { text-decoration: none; }
+
+  .cta-section { text-align: center; }
+  .cta-section p.lead { margin-left: auto; margin-right: auto; }
+
+  footer { padding: 40px 0 60px; text-align: center; }
+  footer p { color: var(--muted); font-size: 13px; }
+  footer code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  footer .links { display: flex; gap: 16px; justify-content: center; margin-top: 10px; font-size: 13px; flex-wrap: wrap; }
+  footer .links a { text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="#top">ORYN</a>
+    <nav class="top">
+      <a data-scroll="how-it-works">How it works</a>
+      <a data-scroll="for-payers">For payers</a>
+      <a data-scroll="verify">Verify</a>
+      <a href="app.html">Open app</a>
+      <a href="https://github.com/angelraph/ORYN">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero wrap">
+    <span class="eyebrow">Live on Celo mainnet · Non-custodial</span>
+    <h1>Your money, automatically organized.</h1>
+    <p class="sub">ORYN watches every payment you receive and splits it exactly the way you tell it to: pay a collaborator, save a percentage, keep the rest. Instantly, onchain, without you touching a spreadsheet.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="app.html">Open the app</a>
+      <a class="btn secondary" href="https://github.com/angelraph/ORYN">View the code</a>
+    </div>
+
+    <div class="stats" id="statsGrid">
+      <div class="stat"><span class="num" id="statDeposited">···</span><span class="label">cUSD received</span></div>
+      <div class="stat"><span class="num" id="statDistributed">···</span><span class="label">cUSD paid out</span></div>
+      <div class="stat"><span class="num" id="statSavings">···</span><span class="label">cUSD in savings</span></div>
+    </div>
+  </div>
+
+  <section class="plain">
+    <div class="wrap">
+      <h2><span class="kicker">The problem</span>Getting paid shouldn't mean doing accounting</h2>
+      <p class="lead">
+        Freelancers, creators, and small teams do the same thing every time money comes in: set some aside for savings,
+        pay a collaborator, track it all by hand. It's repetitive and easy to get wrong. ORYN does it automatically:
+        you describe the rule once, and it runs itself from then on.
+      </p>
+      <details class="explainer">
+        <summary>New to crypto wallets? Read this first.</summary>
+        <div class="content">
+          <p><strong>A wallet</strong> is just an app (like MetaMask) that holds your money and lets you approve transactions. Nobody, including ORYN, can move funds from it without you personally approving each action.</p>
+          <p><strong>cUSD</strong> is a digital dollar (1 cUSD ≈ $1) that runs on Celo, a fast, low-cost payment network. It's the currency ORYN actually moves.</p>
+          <p><strong>Non-custodial</strong> means ORYN never holds or controls your money. It only has permission to execute a split you already approved, and that permission can never be used to send funds anywhere you didn't authorize.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="how-it-works">
+    <div class="wrap">
+      <h2><span class="kicker">For anyone getting paid</span>How it works</h2>
+      <p class="lead">Five steps, and only two of them ever need your attention again after setup.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <div>
+            <h3>Get your vault</h3>
+            <p>A vault is a smart contract that only you control: think of it as your personal, programmable bank account on Celo. One vault per person.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <div>
+            <h3>Describe your split in plain English</h3>
+            <p>"Pay my designer 30%, rest stays as savings." ORYN turns that into a rule you review and sign yourself. Nothing is guessed silently.</p>
+            <a class="tool-link" href="app.html?tab=rules">Open Set Rules in the app</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <div>
+            <h3>Share your payment link</h3>
+            <p>Send anyone who owes you money a link to this page. They pay in cUSD, from any wallet, in a few clicks.</p>
+            <a class="tool-link" href="app.html?tab=deposit">Open Deposit in the app</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">4</div>
+          <div>
+            <h3>ORYN executes the split automatically</h3>
+            <p>Within seconds of a deposit, the agent detects it and runs your exact rule onchain, no manual step, no delay.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">5</div>
+          <div>
+            <h3>Withdraw your savings, anytime</h3>
+            <p>Whatever isn't allocated to a rule sits safely in your vault as savings. Pull it out whenever you want.</p>
+            <a class="tool-link" href="app.html?tab=withdraw">Open Withdraw in the app</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="for-payers">
+    <div class="wrap">
+      <h2><span class="kicker">Paying someone via ORYN?</span>You don't need a vault, just a wallet</h2>
+      <p class="lead">If someone asked you to pay them through ORYN, here's everything you need. No sign-up, no account.</p>
+      <div class="card-box">
+        <ul class="req-list">
+          <li><span class="dot"></span><span><strong>A wallet</strong> that can connect to a website (MetaMask or similar), which will prompt you to add Celo automatically if needed.</span></li>
+          <li><span class="dot"></span><span><strong>A little CELO</strong> for gas: a fraction of a cent covers it.</span></li>
+          <li><span class="dot"></span><span><strong>cUSD</strong> for the amount you're paying. Don't have any? Swap CELO for cUSD non-custodially at <a href="https://app.mento.org">app.mento.org</a>, or ask whoever you're paying for their vault's address.</span></li>
+        </ul>
+        <div style="margin-top:20px">
+          <a class="btn primary" href="app.html?tab=deposit">Open Deposit in the app</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="verify">
+    <div class="wrap">
+      <h2><span class="kicker">Trust, verified</span>Don't take our word for it</h2>
+      <p class="lead">Everything ORYN does is checkable onchain. Here's exactly what to look at.</p>
+      <div class="trust-grid">
+        <div class="trust-row"><span class="k">Vault contract</span><a class="v" href="https://celoscan.io/address/0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E">0xc3c9…eE0E ↗</a></div>
+        <div class="trust-row"><span class="k">Vault factory</span><a class="v" href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19">0xcb45…9ef19 ↗</a></div>
+        <div class="trust-row"><span class="k">Agent wallet</span><a class="v" href="https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26">0xeae6…5d26 ↗</a></div>
+        <div class="trust-row"><span class="k">ERC-8004 agent identity</span><a class="v" href="https://8004scan.io/agents/celo/9688">agentId 9688 ↗</a></div>
+        <div class="trust-row"><span class="k">Source code</span><a class="v" href="https://github.com/angelraph/ORYN">github.com/angelraph/ORYN ↗</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" class="cta-section">
+    <div class="wrap">
+      <h2><span class="kicker">Try it now</span>Everything in one place</h2>
+      <p class="lead">Deposit, set your rules, withdraw, or fund the agent: all in the ORYN app. Nothing reaches your wallet until you review and approve it yourself.</p>
+      <a class="btn primary" href="app.html">Open the app</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · Attribution tag <code>celo_2a23542d598e</code></p>
+    <div class="links">
+      <a href="app.html">Open app</a>
+      <a href="https://github.com/angelraph/ORYN">GitHub</a>
+      <a href="https://celoscan.io/address/0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E">Celoscan</a>
+      <a href="https://8004scan.io/agents/celo/9688">8004scan</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const RPC = "https://forno.celo.org";
+
+  function formatUnitsDecimal(bigintValue, decimals) {
+    const s = bigintValue.toString().padStart(decimals + 1, "0");
+    const whole = s.slice(0, -decimals) || "0";
+    const frac = s.slice(-decimals).replace(/0+$/, "");
+    return frac ? `${whole}.${frac}` : whole;
+  }
+
+  document.querySelectorAll("[data-scroll]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById(el.dataset.scroll).scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  // ============ Live stats (no wallet required) ============
+  const VAULT_FOR_STATS = "0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E";
+  const STAT_SELECTORS = { totalDeposited: "ff50abdc", totalDistributed: "efca2eed", savingsBalance: "ad787096" };
+
+  async function ethCallPublic(to, selector) {
+    const res = await fetch(RPC, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data: "0x" + selector }, "latest"] }),
+    });
+    const json = await res.json();
+    if (!json.result) throw new Error(json.error ? json.error.message : "no result");
+    return BigInt(json.result);
+  }
+
+  (async function loadStats() {
+    try {
+      const [deposited, distributed, savings] = await Promise.all([
+        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.totalDeposited),
+        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.totalDistributed),
+        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.savingsBalance),
+      ]);
+      document.getElementById("statDeposited").textContent = formatUnitsDecimal(deposited, 18);
+      document.getElementById("statDistributed").textContent = formatUnitsDecimal(distributed, 18);
+      document.getElementById("statSavings").textContent = formatUnitsDecimal(savings, 18);
+    } catch {
+      document.getElementById("statsGrid").style.display = "none";
+    }
+  })();
+</script>
+
+</body>
+</html>
