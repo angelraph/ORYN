@@ -216,15 +216,19 @@
 
       <!-- DEPOSIT -->
       <div class="tab-panel" id="panel-deposit">
-        <p class="tab-help">Pay into a vault: approve the token, then deposit. Two transactions, both shown before you confirm. Paying someone else's invoice? Paste their vault address below instead of your own.</p>
+        <p class="tab-help">Pay into a vault — one click. ORYN handles approval and deposit for you, in order, and won't move anything until each step is confirmed on-chain. Paying someone else's invoice? Paste their vault address below instead of your own.</p>
         <div class="field"><label>Vault address</label><input id="depVault" placeholder="Connect your wallet to auto-fill" /></div>
         <div class="field"><label>Token address (cUSD, 18 decimals)</label><input id="depToken" value="0x765DE816845861e75A25fCA122bb6898B8B1282a" /></div>
         <div class="field"><label>Amount (cUSD)</label><input id="depAmount" value="1.00" /></div>
+        <div class="balance-box" id="depBalanceBox" style="display:none">
+          <div>Your wallet <strong id="depWalletBalance">···</strong></div>
+          <div>Vault, awaiting split <strong id="depVaultBalance">···</strong></div>
+        </div>
         <div class="panel-actions">
-          <button class="btn secondary" id="depApproveBtn" disabled>Approve</button>
-          <button class="btn primary" id="depSendBtn" disabled>Deposit</button>
+          <button class="btn primary" id="depPayBtn" disabled>Pay</button>
         </div>
         <div class="status-box" id="depStatus"></div>
+        <p class="tab-help">Your cUSD only ever leaves your wallet when you personally confirm a transaction in it. If anything below fails or is rejected, nothing moves — check "Your wallet" above, it will still show your full balance.</p>
       </div>
 
       <!-- SET RULES -->
@@ -414,7 +418,7 @@
   const walletStatus = document.getElementById("walletStatus");
   const connectBtn = document.getElementById("connectBtn");
   const disconnectBtn = document.getElementById("disconnectBtn");
-  const sendButtons = ["depApproveBtn", "depSendBtn", "rulesSendBtn", "wdSendBtn", "fundSendBtn"];
+  const sendButtons = ["depPayBtn", "rulesSendBtn", "wdSendBtn", "fundSendBtn"];
 
   function resetWalletUI() {
     account = null;
@@ -424,6 +428,7 @@
     disconnectBtn.style.display = "none";
     updateRulesTotalsAndCalldata();
     refreshMyVault();
+    document.getElementById("depBalanceBox").style.display = "none";
   }
 
   // ============ My Vault (owner-only tabs must never default to someone else's vault) ============
@@ -440,6 +445,7 @@
     vaultFieldIds.forEach((id) => { document.getElementById(id).value = addr; });
     const depVaultEl = document.getElementById("depVault");
     if (!depVaultEl.value) depVaultEl.value = addr;
+    refreshDepositBalances();
   }
 
   async function fetchMyVault(owner) {
@@ -550,6 +556,7 @@
       if (!wdTo.value) wdTo.value = account;
       updateRulesTotalsAndCalldata();
       refreshMyVault();
+      refreshDepositBalances();
     } catch (err) {
       walletStatus.textContent = "Connect failed: " + (err && err.message ? err.message : err);
     }
@@ -563,6 +570,7 @@
       const wdTo = document.getElementById("wdTo");
       wdTo.value = account;
       refreshMyVault();
+      refreshDepositBalances();
     });
   }
 
@@ -597,10 +605,51 @@
   const SELECTOR_APPROVE = "095ea7b3";
   const SELECTOR_DEPOSIT = "b6b55f25";
   const SELECTOR_ALLOWANCE = "dd62ed3e";
+  const SELECTOR_BALANCE_OF = "70a08231";
+  const SELECTOR_PENDING_BALANCE = "57b4d18e";
   const depVault = document.getElementById("depVault");
   const depToken = document.getElementById("depToken");
   const depAmount = document.getElementById("depAmount");
   const depStatus = document.getElementById("depStatus");
+  const depBalanceBox = document.getElementById("depBalanceBox");
+  const depWalletBalance = document.getElementById("depWalletBalance");
+  const depVaultBalance = document.getElementById("depVaultBalance");
+
+  // Shows the user's real wallet balance and the vault's pending (not-yet-split) balance,
+  // so "did my money actually go anywhere?" always has a visible answer on this page instead
+  // of requiring a trip to Celoscan.
+  async function refreshDepositBalances() {
+    if (!account || document.getElementById("panel-deposit").hidden) return;
+    const tokenAddr = depToken.value.trim();
+    const vaultAddr = depVault.value.trim();
+    if (!isValidAddress(tokenAddr)) { depBalanceBox.style.display = "none"; return; }
+    try {
+      const walletBal = await ethCallPublic(tokenAddr, SELECTOR_BALANCE_OF + encodeAddress(account));
+      depWalletBalance.textContent = formatUnitsDecimal(walletBal, 18) + " cUSD";
+      if (isValidAddress(vaultAddr)) {
+        const pending = await ethCallPublic(vaultAddr, SELECTOR_PENDING_BALANCE);
+        depVaultBalance.textContent = formatUnitsDecimal(pending, 18) + " cUSD";
+      } else {
+        depVaultBalance.textContent = "—";
+      }
+      depBalanceBox.style.display = "block";
+    } catch { depBalanceBox.style.display = "none"; }
+  }
+  depVault.addEventListener("blur", refreshDepositBalances);
+  depToken.addEventListener("blur", refreshDepositBalances);
+  setInterval(refreshDepositBalances, 20000);
+
+  // Approve's receipt confirms the tx is mined, but the RPC node this page reads from can
+  // still briefly lag behind the node the wallet uses for its own pre-send simulation. Rather
+  // than fail Deposit on that race, poll our own allowance read a few times before giving up.
+  async function waitForAllowance(tokenAddr, owner, spender, amount, { tries = 6, intervalMs = 2000 } = {}) {
+    for (let i = 0; i < tries; i++) {
+      const allowance = await ethCallPublic(tokenAddr, SELECTOR_ALLOWANCE + encodeAddress(owner) + encodeAddress(spender));
+      if (allowance >= amount) return true;
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return false;
+  }
 
   function setStatus(el, msg, cls) { el.textContent = msg; el.className = "status-box " + (cls || ""); }
 
@@ -614,7 +663,23 @@
     msg = msg.replace(/\s*\{"code":.*$/s, "").trim(); // strip verbose JSON-RPC noise some wallets append
     if (/user rejected|user denied/i.test(msg)) return "You rejected the request in your wallet.";
     if (/insufficient funds/i.test(msg)) return "Insufficient CELO in your wallet to cover gas.";
+    if (/simulation failed|likely to fail|may fail|execution reverted/i.test(msg)) return "Your wallet flagged this as likely to fail, so it didn't ask you to sign it.";
     return msg;
+  }
+
+  // Wraps any deposit-flow error with an explicit statement of whether funds moved.
+  // Users seeing a raw wallet/RPC error have no way to know that a rejected-before-signing
+  // or reverted-on-chain failure leaves their balance untouched — say so directly instead
+  // of leaving them to guess and re-check Celoscan themselves.
+  function withFundsSafeNote(err) {
+    const msg = cleanErrorMessage(err);
+    if (/reverted on-chain/i.test(msg)) {
+      return new Error("Your cUSD wasn't moved — the transaction reverted on-chain (only a small CELO gas fee was spent). " + msg);
+    }
+    if (/you rejected/i.test(msg)) {
+      return new Error("You canceled — nothing was sent. Your cUSD is still in your wallet.");
+    }
+    return new Error("Nothing was sent — your cUSD is still in your wallet. " + msg);
   }
 
   function renderTxCard(el, state, title, note, txHash) {
@@ -647,45 +712,59 @@
   function setTxSuccess(el, txHash, note) { renderTxCard(el, "ok", "Transaction sent", note, txHash); }
   function setTxError(el, err) { renderTxCard(el, "err", "Transaction failed", cleanErrorMessage(err)); }
 
-  document.getElementById("depApproveBtn").addEventListener("click", async () => {
+  // Single button: checks balance, approves only if needed (waiting out the confirmation +
+  // allowance-visibility race before moving on), then deposits. One click, one clear status
+  // trail, and every failure states plainly whether your cUSD moved.
+  document.getElementById("depPayBtn").addEventListener("click", async () => {
     if (!account) return;
-    const depSendBtn = document.getElementById("depSendBtn");
+    const payBtn = document.getElementById("depPayBtn");
+    payBtn.disabled = true;
     try {
       const vaultAddr = depVault.value.trim();
       const tokenAddr = depToken.value.trim();
       const amount = parseUnitsDecimal(depAmount.value, 18);
-      setTxPending(depStatus, "Checking vault address…");
-      depSendBtn.disabled = true;
-      await assertRealVault(vaultAddr, tokenAddr, account);
-      const data = "0x" + SELECTOR_APPROVE + encodeAddress(vaultAddr) + encodeUint256(amount);
-      setTxPending(depStatus, "Sending approve() — check your wallet…");
-      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data: withTag(data), value: "0x0" }] });
-      setTxPending(depStatus, "Approve sent — waiting for on-chain confirmation…");
-      await waitForReceipt(txHash);
-      setTxSuccess(depStatus, txHash, "Approved. Now click Deposit.");
-    } catch (err) { setTxError(depStatus, err); }
-    finally { depSendBtn.disabled = false; }
-  });
 
-  document.getElementById("depSendBtn").addEventListener("click", async () => {
-    if (!account) return;
-    try {
-      const vaultAddr = depVault.value.trim();
-      const tokenAddr = depToken.value.trim();
-      const amount = parseUnitsDecimal(depAmount.value, 18);
       setTxPending(depStatus, "Checking vault address…");
       await assertRealVault(vaultAddr, tokenAddr, account);
-      setTxPending(depStatus, "Checking allowance…");
-      const allowance = await ethCallPublic(tokenAddr, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(vaultAddr));
-      if (allowance < amount) {
-        setTxError(depStatus, new Error("Allowance isn't confirmed on-chain yet. Click Approve and wait for it to confirm, then Deposit."));
+
+      setTxPending(depStatus, "Checking your balance…");
+      const walletBal = await ethCallPublic(tokenAddr, SELECTOR_BALANCE_OF + encodeAddress(account));
+      if (walletBal < amount) {
+        setTxError(depStatus, new Error(`You only have ${formatUnitsDecimal(walletBal, 18)} cUSD in this wallet — not enough to pay ${formatUnitsDecimal(amount, 18)} cUSD. Nothing was sent.`));
         return;
       }
-      const data = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
-      setTxPending(depStatus, "Sending deposit() — check your wallet…");
-      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: vaultAddr, data: withTag(data), value: "0x0" }] });
-      setTxSuccess(depStatus, txHash, "Deposited. ORYN's agent should detect this within ~15s.");
-    } catch (err) { setTxError(depStatus, err); }
+
+      setTxPending(depStatus, "Checking allowance…");
+      const allowance = await ethCallPublic(tokenAddr, SELECTOR_ALLOWANCE + encodeAddress(account) + encodeAddress(vaultAddr));
+
+      if (allowance < amount) {
+        const approveData = "0x" + SELECTOR_APPROVE + encodeAddress(vaultAddr) + encodeUint256(amount);
+        setTxPending(depStatus, "Step 1 of 2 — Approve: check your wallet…");
+        const approveTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data: withTag(approveData), value: "0x0" }] });
+        setTxPending(depStatus, "Step 1 of 2 — Approve sent, waiting for confirmation…");
+        await waitForReceipt(approveTx);
+        setTxPending(depStatus, "Approve confirmed — double-checking it's visible before paying…");
+        const visible = await waitForAllowance(tokenAddr, account, vaultAddr, amount);
+        if (!visible) {
+          setTxError(depStatus, new Error("Approve confirmed on-chain, but this page can't see it reflected yet. Nothing else was sent — wait a few seconds and click Pay again to finish the deposit."));
+          return;
+        }
+        setTxPending(depStatus, "Step 2 of 2 — Depositing: check your wallet…");
+      } else {
+        setTxPending(depStatus, "Depositing: check your wallet…");
+      }
+
+      const depositData = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
+      const depositTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: vaultAddr, data: withTag(depositData), value: "0x0" }] });
+      setTxPending(depStatus, "Payment sent — waiting for on-chain confirmation…");
+      await waitForReceipt(depositTx);
+      setTxSuccess(depStatus, depositTx, "Paid. ORYN's agent should split this within ~15s.");
+      refreshDepositBalances();
+    } catch (err) {
+      setTxError(depStatus, withFundsSafeNote(err));
+    } finally {
+      payBtn.disabled = false;
+    }
   });
 
   // ============ SET RULES tab ============
