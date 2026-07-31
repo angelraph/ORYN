@@ -174,9 +174,9 @@
     </div>
 
     <div class="stats" id="statsGrid">
-      <div class="stat"><span class="num" id="statDeposited">···</span><span class="label">cUSD received</span></div>
-      <div class="stat"><span class="num" id="statDistributed">···</span><span class="label">cUSD paid out</span></div>
-      <div class="stat"><span class="num" id="statSavings">···</span><span class="label">cUSD in savings</span></div>
+      <div class="stat"><span class="num" id="statDeposited"></span><span class="label">cUSD received</span></div>
+      <div class="stat"><span class="num" id="statDistributed"></span><span class="label">cUSD paid out</span></div>
+      <div class="stat"><span class="num" id="statSavings"></span><span class="label">cUSD in savings</span></div>
     </div>
   </div>
 
@@ -315,31 +315,76 @@
     });
   });
 
-  // ============ Live stats (no wallet required) ============
-  const VAULT_FOR_STATS = "0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E";
+  // ============ Live stats (aggregated across every ORYN vault, no wallet required) ============
+  const FACTORY_ADDRESS = "0xcb45e24d147262302b6e7dac579e8ae4d879ef19";
+  const SELECTOR_VAULT_COUNT = "a7c6a100";
+  const SELECTOR_ALL_VAULTS = "9094a91e";
   const STAT_SELECTORS = { totalDeposited: "ff50abdc", totalDistributed: "efca2eed", savingsBalance: "ad787096" };
 
-  async function ethCallPublic(to, selector) {
-    const res = await fetch(RPC, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data: "0x" + selector }, "latest"] }),
-    });
-    const json = await res.json();
-    if (!json.result) throw new Error(json.error ? json.error.message : "no result");
-    return BigInt(json.result);
+  function padHex(hex, bytes) { return hex.replace(/^0x/, "").padStart(bytes * 2, "0"); }
+
+  // A single bad response from forno.celo.org (rate limit, timeout) shouldn't take down
+  // the whole stats section. Retry a couple of times with backoff before giving up on
+  // any individual call.
+  async function ethCallPublic(to, data, { retries = 2 } = {}) {
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(RPC, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }),
+        });
+        const json = await res.json();
+        if (!json.result) throw new Error(json.error ? json.error.message : "no result");
+        return BigInt(json.result);
+      } catch (err) {
+        lastErr = err;
+        if (attempt < retries) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+    throw lastErr;
+  }
+
+  function addressFromUint256(value) { return "0x" + value.toString(16).padStart(40, "0"); }
+
+  async function fetchVaultTotals(vault) {
+    const [deposited, distributed, savings] = await Promise.all([
+      ethCallPublic(vault, "0x" + STAT_SELECTORS.totalDeposited),
+      ethCallPublic(vault, "0x" + STAT_SELECTORS.totalDistributed),
+      ethCallPublic(vault, "0x" + STAT_SELECTORS.savingsBalance),
+    ]);
+    return { deposited, distributed, savings };
   }
 
   (async function loadStats() {
     try {
-      const [deposited, distributed, savings] = await Promise.all([
-        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.totalDeposited),
-        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.totalDistributed),
-        ethCallPublic(VAULT_FOR_STATS, STAT_SELECTORS.savingsBalance),
-      ]);
+      const count = await ethCallPublic(FACTORY_ADDRESS, "0x" + SELECTOR_VAULT_COUNT);
+
+      const vaultLookups = [];
+      for (let i = 0n; i < count; i++) {
+        vaultLookups.push(ethCallPublic(FACTORY_ADDRESS, "0x" + SELECTOR_ALL_VAULTS + padHex(i.toString(16), 32)));
+      }
+      const vaultResults = await Promise.allSettled(vaultLookups);
+      const vaults = vaultResults.filter((r) => r.status === "fulfilled").map((r) => addressFromUint256(r.value));
+
+      // Vaults that fail even after retries (a single flaky read) are skipped rather than
+      // aborting the whole aggregation, so one bad vault can't blank out every other one.
+      const totalsResults = await Promise.allSettled(vaults.map(fetchVaultTotals));
+      let deposited = 0n, distributed = 0n, savings = 0n;
+      for (const result of totalsResults) {
+        if (result.status !== "fulfilled") continue;
+        deposited += result.value.deposited;
+        distributed += result.value.distributed;
+        savings += result.value.savings;
+      }
+
       document.getElementById("statDeposited").textContent = formatUnitsDecimal(deposited, 18);
       document.getElementById("statDistributed").textContent = formatUnitsDecimal(distributed, 18);
       document.getElementById("statSavings").textContent = formatUnitsDecimal(savings, 18);
+      document.getElementById("statsGrid").style.display = "";
     } catch {
+      // Only reached if the factory itself can't be read even after retries, i.e. there is
+      // truly nothing to show, not on a single transient hiccup.
       document.getElementById("statsGrid").style.display = "none";
     }
   })();
