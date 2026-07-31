@@ -216,7 +216,7 @@
 
       <!-- DEPOSIT -->
       <div class="tab-panel" id="panel-deposit">
-        <p class="tab-help">Pay into a vault — one click. ORYN handles approval and deposit for you, in order, and won't move anything until each step is confirmed on-chain. Paying someone else's invoice? Paste their vault address below instead of your own.</p>
+        <p class="tab-help">Pay into a vault in one click. ORYN handles approval and deposit for you, in order, and won't move anything until each step is confirmed on-chain. Paying someone else's invoice? Paste their vault address below instead of your own.</p>
         <div class="field"><label>Vault address</label><input id="depVault" placeholder="Connect your wallet to auto-fill" /></div>
         <div class="field"><label>Token address (cUSD, 18 decimals)</label><input id="depToken" value="0x765DE816845861e75A25fCA122bb6898B8B1282a" /></div>
         <div class="field"><label>Amount (cUSD)</label><input id="depAmount" value="1.00" /></div>
@@ -228,7 +228,7 @@
           <button class="btn primary" id="depPayBtn" disabled>Pay</button>
         </div>
         <div class="status-box" id="depStatus"></div>
-        <p class="tab-help">Your cUSD only ever leaves your wallet when you personally confirm a transaction in it. If anything below fails or is rejected, nothing moves — check "Your wallet" above, it will still show your full balance.</p>
+        <p class="tab-help">Your cUSD only ever leaves your wallet when you personally confirm a transaction in it. If anything below fails or is rejected, nothing moves. Check "Your wallet" above and it will still show your full balance.</p>
       </div>
 
       <!-- SET RULES -->
@@ -370,7 +370,7 @@
       }
       await new Promise((r) => setTimeout(r, intervalMs));
     }
-    throw new Error("Still pending after 2 minutes — check Celoscan, then try Deposit again once Approve is confirmed.");
+    throw new Error("Still pending after 2 minutes. Check Celoscan, then try Deposit again once Approve is confirmed.");
   }
   // A mistyped or badly-pasted vault address (dropped char, stray space, wrong contract)
   // never reverts when sent deposit()/approve() calldata — it just silently no-ops, which
@@ -390,7 +390,7 @@
   }
   async function assertRealVault(addr, expectedToken, connectedAccount) {
     if (!isValidAddress(addr)) {
-      throw new Error("That's not a valid address — check for a dropped character or a stray space from copy-pasting, and make sure it's the full 0x… vault address.");
+      throw new Error("That's not a valid address. Check for a dropped character or a stray space from copy-pasting, and make sure it's the full 0x… vault address.");
     }
     const code = await ethGetCode(addr);
     if (!code || code === "0x") {
@@ -398,19 +398,19 @@
       // address (which obviously has no vault contract at it) instead of your
       // vault's address. Look up the real one and hand it straight back.
       if (connectedAccount && addr.toLowerCase() === connectedAccount.toLowerCase()) {
-        let hint = " You don't have a vault yet — use the banner above to create one.";
+        let hint = " You don't have a vault yet. Use the banner above to create one.";
         try {
           const myVault = await fetchMyVault(connectedAccount);
-          if (myVault) hint = ` Your vault is ${myVault} — use that instead.`;
+          if (myVault) hint = ` Your vault is ${myVault}. Use that instead.`;
         } catch {}
         throw new Error("That's your wallet address, not your vault address." + hint);
       }
-      throw new Error("No contract exists at that address on Celo mainnet — double-check the vault address before sending funds.");
+      throw new Error("No contract exists at that address on Celo mainnet. Double-check the vault address before sending funds.");
     }
     const tokenWord = await ethCallPublic(addr, SELECTOR_TOKEN);
     const tokenAddr = "0x" + tokenWord.toString(16).padStart(40, "0");
     if (tokenAddr.toLowerCase() !== expectedToken.toLowerCase()) {
-      throw new Error("That address isn't an ORYN vault for this token — double-check it before sending funds.");
+      throw new Error("That address isn't an ORYN vault for this token. Double-check it before sending funds.");
     }
   }
 
@@ -473,7 +473,7 @@
       vaultBarRow.innerHTML = `Your vault <span class="addr">${shortHash(data)}</span> <a class="tx-link" href="https://celoscan.io/address/${data}" target="_blank" rel="noopener">Celoscan ↗</a>`;
       fillVaultFields(data);
     } else if (state === "missing") {
-      vaultBarRow.innerHTML = `No vault yet for this wallet — deposits to your own vault and any Set Rules / Withdraw action need one. <button class="btn small primary" id="createVaultBtn" type="button">Create my vault</button>`;
+      vaultBarRow.innerHTML = `No vault yet for this wallet. Deposits to your own vault and any Set Rules / Withdraw action need one. <button class="btn small primary" id="createVaultBtn" type="button">Create my vault</button>`;
       vaultFieldIds.forEach((id) => { document.getElementById(id).value = ""; });
       document.getElementById("createVaultBtn").addEventListener("click", createMyVault);
     } else if (state === "error") {
@@ -493,16 +493,16 @@
 
   async function createMyVault() {
     try {
-      setTxPending(vaultCreateStatus, "Creating your vault — check your wallet…");
+      setTxPending(vaultCreateStatus, "Creating your vault. Check your wallet…");
       const data = "0x" + SELECTOR_CREATE_VAULT + encodeAddress(DEFAULT_TOKEN) + encodeAddress(DEFAULT_AGENT);
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: FACTORY_ADDRESS, data: withTag(data), value: "0x0" }] });
-      setTxPending(vaultCreateStatus, "Vault transaction sent — waiting for confirmation…");
+      setTxPending(vaultCreateStatus, "Vault transaction sent. Waiting for confirmation…");
       const myVault = await waitForVault(account);
       if (myVault) {
         setTxSuccess(vaultCreateStatus, txHash, "Vault created.");
         renderVaultBar("found", myVault);
       } else {
-        setTxError(vaultCreateStatus, new Error("Sent, but not confirmed yet — reload this page in a minute to see your vault."));
+        setTxError(vaultCreateStatus, new Error("Sent, but not confirmed yet. Reload this page in a minute to see your vault."));
       }
     } catch (err) { setTxError(vaultCreateStatus, err); }
   }
@@ -678,12 +678,12 @@
   function withFundsSafeNote(err) {
     const msg = cleanErrorMessage(err);
     if (/reverted on-chain/i.test(msg)) {
-      return new Error("Your cUSD wasn't moved — the transaction reverted on-chain (only a small CELO gas fee was spent). " + msg);
+      return new Error("Your cUSD wasn't moved. The transaction reverted on-chain (only a small CELO gas fee was spent). " + msg);
     }
     if (/you rejected/i.test(msg)) {
-      return new Error("You canceled — nothing was sent. Your cUSD is still in your wallet.");
+      return new Error("You canceled. Nothing was sent, and your cUSD is still in your wallet.");
     }
-    return new Error("Nothing was sent — your cUSD is still in your wallet. " + msg);
+    return new Error("Nothing was sent. Your cUSD is still in your wallet. " + msg);
   }
 
   function renderTxCard(el, state, title, note, txHash) {
@@ -734,7 +734,7 @@
       setTxPending(depStatus, "Checking your balance…");
       const walletBal = await ethCallPublic(tokenAddr, SELECTOR_BALANCE_OF + encodeAddress(account));
       if (walletBal < amount) {
-        setTxError(depStatus, new Error(`You only have ${formatUnitsDecimal(walletBal, 18)} cUSD in this wallet — not enough to pay ${formatUnitsDecimal(amount, 18)} cUSD. Nothing was sent.`));
+        setTxError(depStatus, new Error(`You only have ${formatUnitsDecimal(walletBal, 18)} cUSD in this wallet, not enough to pay ${formatUnitsDecimal(amount, 18)} cUSD. Nothing was sent.`));
         return;
       }
 
@@ -743,24 +743,24 @@
 
       if (allowance < amount) {
         const approveData = "0x" + SELECTOR_APPROVE + encodeAddress(vaultAddr) + encodeUint256(amount);
-        setTxPending(depStatus, "Step 1 of 2 — Approve: check your wallet…");
+        setTxPending(depStatus, "Step 1 of 2, Approve: check your wallet…");
         const approveTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data: withTag(approveData), value: "0x0" }] });
-        setTxPending(depStatus, "Step 1 of 2 — Approve sent, waiting for confirmation…");
+        setTxPending(depStatus, "Step 1 of 2, Approve sent. Waiting for confirmation…");
         await waitForReceipt(approveTx);
-        setTxPending(depStatus, "Approve confirmed — double-checking it's visible before paying…");
+        setTxPending(depStatus, "Approve confirmed. Double-checking it's visible before paying…");
         const visible = await waitForAllowance(tokenAddr, account, vaultAddr, amount);
         if (!visible) {
-          setTxError(depStatus, new Error("Approve confirmed on-chain, but this page can't see it reflected yet. Nothing else was sent — wait a few seconds and click Pay again to finish the deposit."));
+          setTxError(depStatus, new Error("Approve confirmed on-chain, but this page can't see it reflected yet. Nothing else was sent. Wait a few seconds and click Pay again to finish the deposit."));
           return;
         }
-        setTxPending(depStatus, "Step 2 of 2 — Depositing: check your wallet…");
+        setTxPending(depStatus, "Step 2 of 2, Depositing: check your wallet…");
       } else {
         setTxPending(depStatus, "Depositing: check your wallet…");
       }
 
       const depositData = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
       const depositTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: vaultAddr, data: withTag(depositData), value: "0x0" }] });
-      setTxPending(depStatus, "Payment sent — waiting for on-chain confirmation…");
+      setTxPending(depStatus, "Payment sent. Waiting for on-chain confirmation…");
       await waitForReceipt(depositTx);
       setTxSuccess(depStatus, depositTx, "Paid. ORYN's agent should split this within ~15s.");
       refreshDepositBalances();
@@ -897,7 +897,7 @@
     if (!account) return;
     try {
       const data = buildRulesCalldata();
-      setTxPending(rulesStatus, "Sending — check your wallet…");
+      setTxPending(rulesStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: rulesVault.value, data: withTag(data), value: "0x0" }] });
       setTxSuccess(rulesStatus, txHash, "Rules updated.");
     } catch (err) { setTxError(rulesStatus, err); }
@@ -927,7 +927,7 @@
       const amount = parseUnitsDecimal(wdAmount.value, 18);
       const to = wdTo.value || account;
       const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
-      setTxPending(wdStatus, "Sending — check your wallet…");
+      setTxPending(wdStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: wdVault.value, data: withTag(data), value: "0x0" }] });
       setTxSuccess(wdStatus, txHash, "Withdrawal sent.");
     } catch (err) { setTxError(wdStatus, err); }
@@ -945,7 +945,7 @@
     try {
       const amount = parseUnitsDecimal(fundAmount.value, 6); // USDC = 6 decimals
       const data = "0x" + SELECTOR_TRANSFER + encodeAddress(fundAgent.value) + encodeUint256(amount);
-      setTxPending(fundStatus, "Sending — check your wallet…");
+      setTxPending(fundStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: fundToken.value, data: withTag(data), value: "0x0" }] });
       setTxSuccess(fundStatus, txHash, "Agent funded.");
     } catch (err) { setTxError(fundStatus, err); }
