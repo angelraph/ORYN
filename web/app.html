@@ -356,7 +356,12 @@
   // Polls until a tx is mined. Needed before letting a dependent tx (e.g. deposit
   // after approve) go out — otherwise it can be sent while the allowance is still
   // zero on-chain, and the wallet reports that as a failing/insufficient-balance tx.
-  async function waitForReceipt(txHash, { intervalMs = 2000, timeoutMs = 120000 } = {}) {
+  async function waitForReceipt(txHash, {
+    intervalMs = 2000,
+    timeoutMs = 120000,
+    revertMessage = "Transaction reverted on-chain.",
+    timeoutMessage = "Still pending after 2 minutes. Check Celoscan to see if it confirmed.",
+  } = {}) {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const res = await fetch(RPC, {
@@ -365,12 +370,12 @@
       });
       const json = await res.json();
       if (json.result) {
-        if (json.result.status === "0x0") throw new Error("Approve transaction reverted on-chain.");
+        if (json.result.status === "0x0") throw new Error(revertMessage);
         return json.result;
       }
       await new Promise((r) => setTimeout(r, intervalMs));
     }
-    throw new Error("Still pending after 2 minutes. Check Celoscan, then try Deposit again once Approve is confirmed.");
+    throw new Error(timeoutMessage);
   }
   // A mistyped or badly-pasted vault address (dropped char, stray space, wrong contract)
   // never reverts when sent deposit()/approve() calldata — it just silently no-ops, which
@@ -746,7 +751,10 @@
         setTxPending(depStatus, "Step 1 of 2, Approve: check your wallet…");
         const approveTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: tokenAddr, data: withTag(approveData), value: "0x0" }] });
         setTxPending(depStatus, "Step 1 of 2, Approve sent. Waiting for confirmation…");
-        await waitForReceipt(approveTx);
+        await waitForReceipt(approveTx, {
+          revertMessage: "Approve transaction reverted on-chain.",
+          timeoutMessage: "Still pending after 2 minutes. Check Celoscan, then try Deposit again once Approve is confirmed.",
+        });
         setTxPending(depStatus, "Approve confirmed. Double-checking it's visible before paying…");
         const visible = await waitForAllowance(tokenAddr, account, vaultAddr, amount);
         if (!visible) {
@@ -761,7 +769,10 @@
       const depositData = "0x" + SELECTOR_DEPOSIT + encodeUint256(amount);
       const depositTx = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: vaultAddr, data: withTag(depositData), value: "0x0" }] });
       setTxPending(depStatus, "Payment sent. Waiting for on-chain confirmation…");
-      await waitForReceipt(depositTx);
+      await waitForReceipt(depositTx, {
+        revertMessage: "Deposit transaction reverted on-chain.",
+        timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if your deposit confirmed.",
+      });
       setTxSuccess(depStatus, depositTx, "Paid. ORYN's agent should split this within ~15s.");
       refreshDepositBalances();
     } catch (err) {
@@ -899,6 +910,11 @@
       const data = buildRulesCalldata();
       setTxPending(rulesStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: rulesVault.value, data: withTag(data), value: "0x0" }] });
+      setTxPending(rulesStatus, "Rules transaction sent. Waiting for confirmation…");
+      await waitForReceipt(txHash, {
+        revertMessage: "Rules transaction reverted on-chain. Your split was not saved, try again.",
+        timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if it confirmed.",
+      });
       setTxSuccess(rulesStatus, txHash, "Rules updated.");
     } catch (err) { setTxError(rulesStatus, err); }
   });
@@ -913,11 +929,15 @@
   const wdBalanceBox = document.getElementById("wdBalanceBox");
   const wdBalanceAmount = document.getElementById("wdBalanceAmount");
 
+  async function refreshSavingsBalance() {
+    const value = await ethCallPublic(wdVault.value, SELECTOR_SAVINGS_BALANCE);
+    wdBalanceAmount.textContent = formatUnitsDecimal(value, 18) + " cUSD";
+    wdBalanceBox.style.display = "block";
+  }
+
   document.getElementById("wdCheckBtn").addEventListener("click", async () => {
     try {
-      const value = await ethCallPublic(wdVault.value, SELECTOR_SAVINGS_BALANCE);
-      wdBalanceAmount.textContent = formatUnitsDecimal(value, 18) + " cUSD";
-      wdBalanceBox.style.display = "block";
+      await refreshSavingsBalance();
     } catch (err) { setStatus(wdStatus, "Failed to read balance: " + (err && err.message ? err.message : err), "err"); }
   });
 
@@ -929,7 +949,13 @@
       const data = "0x" + SELECTOR_WITHDRAW + encodeUint256(amount) + encodeAddress(to);
       setTxPending(wdStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: wdVault.value, data: withTag(data), value: "0x0" }] });
+      setTxPending(wdStatus, "Withdrawal transaction sent. Waiting for confirmation…");
+      await waitForReceipt(txHash, {
+        revertMessage: "Withdrawal transaction reverted on-chain. Nothing was moved.",
+        timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if it confirmed.",
+      });
       setTxSuccess(wdStatus, txHash, "Withdrawal sent.");
+      try { await refreshSavingsBalance(); } catch {}
     } catch (err) { setTxError(wdStatus, err); }
   });
 
@@ -947,6 +973,11 @@
       const data = "0x" + SELECTOR_TRANSFER + encodeAddress(fundAgent.value) + encodeUint256(amount);
       setTxPending(fundStatus, "Sending. Check your wallet…");
       const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: fundToken.value, data: withTag(data), value: "0x0" }] });
+      setTxPending(fundStatus, "Funding transaction sent. Waiting for confirmation…");
+      await waitForReceipt(txHash, {
+        revertMessage: "Funding transaction reverted on-chain. Nothing was sent.",
+        timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if it confirmed.",
+      });
       setTxSuccess(fundStatus, txHash, "Agent funded.");
     } catch (err) { setTxError(fundStatus, err); }
   });
