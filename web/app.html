@@ -221,8 +221,8 @@
         <div class="field"><label>Token address (cUSD, 18 decimals)</label><input id="depToken" value="0x765DE816845861e75A25fCA122bb6898B8B1282a" /></div>
         <div class="field"><label>Amount (cUSD)</label><input id="depAmount" value="1.00" /></div>
         <div class="balance-box" id="depBalanceBox" style="display:none">
-          <div>Your wallet <strong id="depWalletBalance">···</strong></div>
-          <div>Vault, awaiting split <strong id="depVaultBalance">···</strong></div>
+          <div>Your wallet <strong id="depWalletBalance"></strong></div>
+          <div>Vault, awaiting split <strong id="depVaultBalance"></strong></div>
         </div>
         <div class="panel-actions">
           <button class="btn primary" id="depPayBtn" disabled>Pay</button>
@@ -272,7 +272,7 @@
         <p class="tab-help">Owner-only. Pulls funds out of your vault's savings balance to any address.</p>
         <div class="field"><label>Vault address</label><input id="wdVault" placeholder="Connect your wallet to auto-fill" /></div>
         <button class="btn secondary" id="wdCheckBtn" type="button">Check savings balance</button>
-        <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount">···</strong></div>
+        <div class="balance-box" id="wdBalanceBox" style="display:none">Available to withdraw<strong id="wdBalanceAmount"></strong></div>
         <div class="field"><label>Amount to withdraw (cUSD)</label><input id="wdAmount" placeholder="e.g. 0.01" /></div>
         <div class="field"><label>Send to (defaults to your connected wallet)</label><input id="wdTo" placeholder="0x..." /></div>
         <div class="panel-actions">
@@ -630,10 +630,14 @@
         const pending = await ethCallPublic(vaultAddr, SELECTOR_PENDING_BALANCE);
         depVaultBalance.textContent = formatUnitsDecimal(pending, 18) + " cUSD";
       } else {
-        depVaultBalance.textContent = "—";
+        depVaultBalance.textContent = "Enter a vault address";
       }
       depBalanceBox.style.display = "block";
-    } catch { depBalanceBox.style.display = "none"; }
+    } catch {
+      // A single transient RPC hiccup (rate limit, timeout) shouldn't blank out balances
+      // that were already showing on screen — only hide the box if it never loaded at all.
+      if (depBalanceBox.style.display !== "block") depBalanceBox.style.display = "none";
+    }
   }
   depVault.addEventListener("blur", refreshDepositBalances);
   depToken.addEventListener("blur", refreshDepositBalances);
