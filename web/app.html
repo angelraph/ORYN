@@ -152,6 +152,7 @@
   .tx-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(251,204,92,0.3); border-top-color: var(--pending); animation: txSpin 0.7s linear infinite; }
   @keyframes txSpin { to { transform: rotate(360deg); } }
   .warn-box { color: var(--accent-strong); background: var(--accent-bg); padding: 8px 10px; border-radius: 8px; font-size: 12.5px; margin-top: 8px; }
+  .warn-box .btn { margin-top: 8px; }
   .balance-box { background: var(--bg-alt); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 13.5px; }
   .balance-box strong { font-size: 17px; display: block; margin-top: 2px; }
   table.rules-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
@@ -211,6 +212,7 @@
       </div>
       <div class="vault-bar" id="vaultBar">
         <div class="vault-bar-row" id="vaultBarRow"></div>
+        <div class="warn-box" id="vaultRulesNudge" style="display:none"></div>
         <div class="tx-card" id="vaultCreateStatus"></div>
       </div>
 
@@ -439,6 +441,7 @@
   // ============ My Vault (owner-only tabs must never default to someone else's vault) ============
   const vaultBar = document.getElementById("vaultBar");
   const vaultBarRow = document.getElementById("vaultBarRow");
+  const vaultRulesNudge = document.getElementById("vaultRulesNudge");
   const vaultCreateStatus = document.getElementById("vaultCreateStatus");
   // Set Rules / Withdraw are owner-only — always mirror "my vault" there. Deposit is NOT
   // owner-only (anyone pays into anyone's vault), so it's deliberately excluded: it only
@@ -469,14 +472,37 @@
     return null;
   }
 
+  // A vault that has received a deposit but has ruleCount == 0 will never produce a
+  // Distributed event — the agent's distribute() runs, finds no rules to loop over, and
+  // the deposit just sits there forever. Nudge the owner back to Set Rules instead of
+  // leaving them to discover this on their own (or never).
+  const SELECTOR_RULE_COUNT = "f6bcf633";
+  const SELECTOR_TOTAL_DEPOSITED = "ff50abdc";
+  async function checkRulesNudge(vaultAddr) {
+    vaultRulesNudge.style.display = "none";
+    try {
+      const [ruleCount, totalDeposited] = await Promise.all([
+        ethCallPublic(vaultAddr, SELECTOR_RULE_COUNT),
+        ethCallPublic(vaultAddr, SELECTOR_TOTAL_DEPOSITED),
+      ]);
+      if (ruleCount === 0n && totalDeposited > 0n) {
+        vaultRulesNudge.innerHTML = `You've deposited ${formatUnitsDecimal(totalDeposited, 18)} cUSD but never set a split, so it just sits here unsplit. <button class="btn small primary" id="goSetRulesBtn" type="button">Set rules now</button>`;
+        vaultRulesNudge.style.display = "block";
+        document.getElementById("goSetRulesBtn").addEventListener("click", () => showTab("rules"));
+      }
+    } catch {}
+  }
+
   function renderVaultBar(state, data) {
     vaultBar.style.display = "flex";
     vaultBar.className = "vault-bar" + (state === "missing" || state === "error" ? " warn" : "");
+    vaultRulesNudge.style.display = "none";
     if (state === "checking") {
       vaultBarRow.textContent = "Checking your vault…";
     } else if (state === "found") {
       vaultBarRow.innerHTML = `Your vault <span class="addr">${shortHash(data)}</span> <a class="tx-link" href="https://celoscan.io/address/${data}" target="_blank" rel="noopener">Celoscan ↗</a>`;
       fillVaultFields(data);
+      checkRulesNudge(data);
     } else if (state === "missing") {
       vaultBarRow.innerHTML = `No vault yet for this wallet. Deposits to your own vault and any Set Rules / Withdraw action need one. <button class="btn small primary" id="createVaultBtn" type="button">Create my vault</button>`;
       vaultFieldIds.forEach((id) => { document.getElementById(id).value = ""; });
