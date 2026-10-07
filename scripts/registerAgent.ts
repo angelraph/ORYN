@@ -2,34 +2,7 @@ import "dotenv/config";
 import { encodeFunctionData, parseEventLogs } from "viem";
 import { identityRegistryAbi } from "../agent/src/lib/abi.js";
 import { sendTaggedTransaction } from "../agent/src/lib/attribution.js";
-
-const IDENTITY_REGISTRY_ADDRESS = "0x8004a169fb4a3325136eb29fa0ceb6d2e539a432" as const;
-const CHAIN_ID = 42220;
-
-function buildAgentRegistrationFile(agentId: bigint) {
-  const record = {
-    type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-    name: "ORYN",
-    description:
-      "Non-custodial autonomous treasury agent on Celo. Splits every incoming cUSD payment into owner-approved payouts and savings, executed onchain. The agent wallet can only trigger a pre-approved split; it can never withdraw or redirect funds.",
-    services: [
-      { name: "web", endpoint: "https://oryn.click" },
-      { name: "x402", endpoint: "https://api.x402.celo.org" },
-    ],
-    x402Support: true,
-    active: true,
-    registrations: [
-      {
-        agentId: Number(agentId),
-        agentRegistry: `eip155:${CHAIN_ID}:${IDENTITY_REGISTRY_ADDRESS}`,
-      },
-    ],
-    supportedTrust: ["reputation"],
-  };
-  const json = JSON.stringify(record);
-  const base64 = Buffer.from(json, "utf-8").toString("base64");
-  return `data:application/json;base64,${base64}`;
-}
+import { IDENTITY_REGISTRY_ADDRESS, buildAgentRegistrationFile } from "./agentRegistration.js";
 
 async function main() {
   // Step 1: mint the identity NFT (agentId assigned by the registry).
