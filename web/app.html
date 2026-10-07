@@ -561,12 +561,17 @@
     return null;
   }
 
-  // A vault that has received a deposit but has ruleCount == 0 will never produce a
-  // Distributed event — the agent's distribute() runs, finds no rules to loop over, and
-  // the deposit just sits there forever. Nudge the owner back to Set Rules instead of
-  // leaving them to discover this on their own (or never).
+  // A vault with ruleCount == 0 accepts deposits, but distribute() has no rules to loop
+  // over, so every payment goes straight to savings and nobody gets paid. Over half of all
+  // live vaults ended up like this, so the app now (a) nudges any rule-less owner, (b)
+  // opens Set Rules for them by default, and (c) won't let them pay into their own vault
+  // until a split exists.
   const SELECTOR_RULE_COUNT = "f6bcf633";
   const SELECTOR_TOTAL_DEPOSITED = "ff50abdc";
+  let myVaultAddr = null;
+  let myVaultRuleCount = null; // null = unknown (not connected, no vault, or read failed)
+  const explicitTab = new URLSearchParams(window.location.search).get("tab");
+
   async function checkRulesNudge(vaultAddr) {
     vaultRulesNudge.style.display = "none";
     try {
@@ -574,11 +579,16 @@
         ethCallPublic(vaultAddr, SELECTOR_RULE_COUNT),
         ethCallPublic(vaultAddr, SELECTOR_TOTAL_DEPOSITED),
       ]);
-      if (ruleCount === 0n && totalDeposited > 0n) {
-        vaultRulesNudge.innerHTML = `You've deposited ${formatUnitsDecimal(totalDeposited, 18)} cUSD but never set a split, so it just sits here unsplit. <button class="btn small primary" id="goSetRulesBtn" type="button">Set rules now</button>`;
-        vaultRulesNudge.style.display = "block";
-        document.getElementById("goSetRulesBtn").addEventListener("click", () => showTab("rules"));
-      }
+      if (vaultAddr !== myVaultAddr) return; // wallet switched while we were reading
+      myVaultRuleCount = ruleCount;
+      if (ruleCount !== 0n) return;
+      const msg = totalDeposited > 0n
+        ? `<strong>Your split isn't set.</strong> ${formatUnitsDecimal(totalDeposited, 18)} cUSD has come in and all of it went to savings, because there was no rule to pay anyone. It's safe, and you can withdraw it any time. Set your split now so the next payment is divided automatically.`
+        : `<strong>One step left: set your split.</strong> Until you do, payments into your vault go straight to savings and nobody gets paid.`;
+      vaultRulesNudge.innerHTML = `${msg}<br /><button class="btn small primary" id="goSetRulesBtn" type="button">Set my split</button>`;
+      vaultRulesNudge.style.display = "block";
+      document.getElementById("goSetRulesBtn").addEventListener("click", () => showTab("rules"));
+      if (!explicitTab) showTab("rules");
     } catch {}
   }
 
@@ -586,6 +596,8 @@
     vaultBar.style.display = "flex";
     vaultBar.className = "vault-bar" + (state === "missing" || state === "error" ? " warn" : "");
     vaultRulesNudge.style.display = "none";
+    myVaultAddr = state === "found" ? data : null;
+    myVaultRuleCount = null;
     if (state === "checking") {
       vaultBarRow.textContent = "Checking your vault…";
     } else if (state === "found") {
@@ -619,8 +631,9 @@
       setTxPending(vaultCreateStatus, "Vault transaction sent. Waiting for confirmation…");
       const myVault = await waitForVault(account);
       if (myVault) {
-        setTxSuccess(vaultCreateStatus, txHash, "Vault created.");
+        setTxSuccess(vaultCreateStatus, txHash, "Vault created. Next: set your split below, before anyone pays you.");
         renderVaultBar("found", myVault);
+        showTab("rules");
       } else {
         setTxError(vaultCreateStatus, new Error("Sent, but not confirmed yet. Reload this page in a minute to see your vault."));
       }
@@ -706,8 +719,7 @@
   }
   tabButtons.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tabBtn)));
 
-  const requestedTab = new URLSearchParams(window.location.search).get("tab");
-  if (requestedTab && panels[requestedTab]) showTab(requestedTab);
+  if (explicitTab && panels[explicitTab]) showTab(explicitTab);
 
   // Hides the tab bar's right-edge scroll-fade once there's nothing left to scroll to,
   // so it doesn't sit there implying more tabs when there aren't any.
@@ -851,6 +863,21 @@
       setTxPending(depStatus, "Checking vault address…");
       await assertRealVault(vaultAddr, tokenAddr, account);
 
+      // Paying into your own vault with no split set just parks the money in savings.
+      // Someone else's vault is their call, so that case is only flagged, never blocked.
+      const ruleCount = await ethCallPublic(vaultAddr, SELECTOR_RULE_COUNT);
+      if (ruleCount === 0n && myVaultAddr && vaultAddr.toLowerCase() === myVaultAddr.toLowerCase()) {
+        renderTxCard(depStatus, "err", "Set your split first",
+          "Your vault has no rules yet, so this payment would go straight to savings and nobody would be paid. Nothing was sent.");
+        const btn = document.createElement("button");
+        btn.className = "btn small primary"; btn.type = "button"; btn.textContent = "Set my split";
+        btn.style.marginTop = "10px";
+        btn.addEventListener("click", () => showTab("rules"));
+        depStatus.querySelector(".tx-body").appendChild(btn);
+        return;
+      }
+      const noSplitNote = ruleCount === 0n ? " This vault's owner hasn't set a split yet, so it will be held in their savings." : "";
+
       setTxPending(depStatus, "Checking your balance…");
       const walletBal = await ethCallPublic(tokenAddr, SELECTOR_BALANCE_OF + encodeAddress(account));
       if (walletBal < amount) {
@@ -888,7 +915,7 @@
         revertMessage: "Deposit transaction reverted on-chain.",
         timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if your deposit confirmed.",
       });
-      setTxSuccess(depStatus, depositTx, "Paid. ORYN's agent should split this within ~15s.");
+      setTxSuccess(depStatus, depositTx, (ruleCount === 0n ? "Paid." : "Paid. ORYN's agent will split this within about 30 seconds.") + noSplitNote);
       refreshDepositBalances();
     } catch (err) {
       setTxError(depStatus, withFundsSafeNote(err));
@@ -1030,7 +1057,8 @@
         revertMessage: "Rules transaction reverted on-chain. Your split was not saved, try again.",
         timeoutMessage: "Still pending after 2 minutes. Check Celoscan to see if it confirmed.",
       });
-      setTxSuccess(rulesStatus, txHash, "Rules updated.");
+      setTxSuccess(rulesStatus, txHash, "Split saved. Every payment from now on is divided automatically.");
+      if (myVaultAddr && rulesVault.value.toLowerCase() === myVaultAddr.toLowerCase()) checkRulesNudge(myVaultAddr);
     } catch (err) { setTxError(rulesStatus, err); }
   });
 
