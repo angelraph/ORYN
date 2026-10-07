@@ -52,15 +52,6 @@
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
 
   /* header */
-  header.site { position: sticky; top: 0; z-index: 20; background: rgba(22,51,0,0.94); backdrop-filter: blur(14px); }
-  header.site .wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-  .logo img { height: 28px; width: auto; display: block; }
-  .logo .tag { color: rgba(255,255,255,0.55); border-left: 1px solid rgba(255,255,255,0.2); padding-left: 12px; }
-  nav.top { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 500; }
-  nav.top a { color: var(--paper); text-decoration: none; opacity: 0.8; } nav.top a:hover { opacity: 1; }
-  .pill { display: inline-flex; align-items: center; border-radius: 9999px; padding: 8px 18px; font-weight: 600; font-size: 14px; text-decoration: none; background: var(--volt); color: var(--forest) !important; opacity: 1 !important; }
-  @media (max-width: 560px) { nav.top .hide-sm, .logo .tag { display: none; } }
 
   .intro { background: var(--forest); color: var(--paper); padding: 64px 0 72px; position: relative; overflow: hidden; }
   .intro::after {
@@ -144,25 +135,42 @@
   .faq .a { padding: 0 40px 18px 0; color: var(--charcoal); }
   .faq .a p:last-child { margin-bottom: 0; }
 
-  footer { background: var(--forest); color: rgba(255,255,255,0.6); padding: 28px 0 40px; font-size: 13px; }
-  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
-  footer img { height: 28px; width: auto; display: block; }
-  footer .links { display: flex; gap: 20px; flex-wrap: wrap; }
-  footer a { text-decoration: none; color: inherit; } footer a:hover { color: var(--paper); }
 </style>
+<link rel="stylesheet" href="/assets/site.css" />
+<script src="/assets/nav.js" defer></script>
 </head>
-<body>
+<body data-page="docs">
 
-<header class="site">
-  <div class="wrap">
-    <a class="logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" /><span class="tag mono">Docs</span></a>
-    <nav class="top">
-      <a class="hide-sm" href="/">Home</a>
-      <a class="hide-sm" href="https://github.com/angelraph/ORYN">GitHub</a>
-      <a class="pill" href="/app">Open app</a>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/" data-nav="home">Home</a>
+      <a href="/app" data-nav="app">App</a>
+      <a href="/docs" data-nav="docs">Docs</a>
+      <a href="/#how">How it works</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub<span class="ext">&nbsp;↗</span></a>
     </nav>
+    <div class="nav-right">
+      <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+      <a class="nav-cta" href="/app">Open app</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
+    </div>
   </div>
 </header>
+<div class="nav-sheet" id="navSheet" hidden>
+  <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
+  <a class="big" href="/app" data-nav="app">App <small>Pay · Rules · Withdraw</small></a>
+  <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
+  <a class="big" href="/#faq">FAQ <small>Quick answers</small></a>
+  <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
+  <div class="sheet-foot">
+    <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+    <a class="nav-cta" href="/app">Open the app</a>
+  </div>
+</div>
+
 
 <div class="intro">
   <div class="wrap">
@@ -351,14 +359,39 @@ pay <span class="h">designer</span> 30% and <span class="h">editor</span> 15%</p
   </article>
 </div>
 
-<footer>
-  <div class="wrap">
-    <img src="/assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" />
-    <div class="links">
-      <a href="/">Home</a>
-      <a href="/app">App</a>
-      <a href="https://github.com/angelraph/ORYN">GitHub</a>
-      <a href="https://8004scan.io/agents/celo/9688">8004scan</a>
+<footer class="site-foot">
+  <div class="foot-inner">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="/assets/oryn-logo-light.png" alt="ORYN" width="98" height="32" />
+        <p>Autonomous treasury agent on Celo. Every payment you receive is split onchain, automatically, without ORYN ever holding your money.</p>
+        <div class="foot-tag">Pay<i>/</i>Split<i>/</i>Grow</div>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="/app">Open the app</a>
+        <a href="/app?tab=deposit">Pay a vault</a>
+        <a href="/app?tab=rules">Set rules</a>
+        <a href="/app?tab=withdraw">Withdraw</a>
+      </div>
+      <div class="foot-col">
+        <h4>Learn</h4>
+        <a href="/docs">Docs</a>
+        <a href="/docs#quickstart">Quickstart</a>
+        <a href="/docs#security">Security model</a>
+        <a href="/#faq">FAQ</a>
+      </div>
+      <div class="foot-col">
+        <h4>Verify</h4>
+        <a href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19" target="_blank" rel="noopener">Vault factory ↗</a>
+        <a href="https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26" target="_blank" rel="noopener">Agent wallet ↗</a>
+        <a href="https://8004scan.io/agents/celo/9688" target="_blank" rel="noopener">Agent identity ↗</a>
+        <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">Source code ↗</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 ORYN · oryn.click</span>
+      <span>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · <code>celo_2a23542d598e</code></span>
     </div>
   </div>
 </footer>

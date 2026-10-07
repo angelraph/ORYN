@@ -1,0 +1,110 @@
+/* Shared chrome for every ORYN page: header, mobile menu, footer.
+   Page-specific styles stay in each page; this file only owns .nav-* and .foot-*. */
+
+.site-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(22, 51, 0, 0.92); backdrop-filter: saturate(140%) blur(14px); -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px);
+  height: 68px; display: flex; align-items: center; gap: 24px;
+}
+.nav-logo { display: flex; align-items: center; flex: none; }
+.nav-logo img { height: 30px; width: auto; display: block; }
+
+.nav-links { display: none; align-items: center; gap: 4px; margin: 0 auto; }
+.nav-links a {
+  position: relative; color: rgba(255, 255, 255, 0.78); text-decoration: none;
+  font-size: 14.5px; font-weight: 500; letter-spacing: -0.02em; padding: 8px 14px; border-radius: 9999px;
+  transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.nav-links a[aria-current="page"] { color: #fff; }
+.nav-links a[aria-current="page"]::after {
+  content: ""; position: absolute; left: 50%; bottom: 1px; width: 5px; height: 5px; margin-left: -2.5px;
+  border-radius: 50%; background: #FCFF52;
+}
+.nav-links .ext { opacity: 0.55; font-size: 0.85em; margin-left: 2px; }
+
+.nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.nav-block {
+  display: none; align-items: center; gap: 8px; text-decoration: none;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.72); padding: 7px 12px 7px 10px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 9999px;
+  font-variant-numeric: tabular-nums; transition: border-color 0.2s;
+}
+.nav-block:hover { border-color: rgba(252, 255, 82, 0.5); }
+.nav-block b { color: #FCFF52; font-weight: 500; }
+.nav-pulse { width: 7px; height: 7px; border-radius: 50%; background: #FCFF52; animation: navPulse 1.6s infinite; }
+@keyframes navPulse { 0% { box-shadow: 0 0 0 0 rgba(252,255,82,0.6); } 70% { box-shadow: 0 0 0 7px rgba(252,255,82,0); } 100% { box-shadow: 0 0 0 0 rgba(252,255,82,0); } }
+
+.nav-cta {
+  display: inline-flex; align-items: center; border-radius: 9999px; padding: 9px 18px;
+  background: #FCFF52; color: #163300; font-weight: 600; font-size: 14px; letter-spacing: -0.02em; text-decoration: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-cta:hover { transform: translateY(-1px); }
+body[data-page="app"] .nav-cta { display: none; }
+
+.nav-toggle {
+  width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.2); background: none; cursor: pointer;
+  display: grid; place-content: center; gap: 5px; padding: 0;
+}
+.nav-toggle span { display: block; width: 16px; height: 1.6px; background: #fff; border-radius: 2px; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(3.3px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3.3px) rotate(-45deg); }
+
+@media (min-width: 900px) {
+  .nav-links { display: flex; }
+  .nav-right { margin-left: 0; }
+  .nav-toggle { display: none; }
+}
+@media (min-width: 1080px) { .nav-block { display: inline-flex; } }
+
+/* mobile sheet */
+.nav-sheet {
+  position: fixed; inset: 68px 0 0 0; background: #163300; z-index: 49; overflow-y: auto;
+  padding: 28px clamp(16px, 4vw, 40px) 40px; display: flex; flex-direction: column;
+  animation: sheetIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-sheet[hidden] { display: none; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(-8px); } }
+.nav-sheet a.big {
+  display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fff;
+  font-family: "Inter Tight", "Inter", system-ui, sans-serif; font-weight: 900; font-size: 40px; letter-spacing: -0.045em; line-height: 1;
+  padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.nav-sheet a.big[aria-current="page"] { color: #FCFF52; }
+.nav-sheet a.big small { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: rgba(255,255,255,0.45); text-transform: uppercase; }
+.nav-sheet .sheet-foot { margin-top: auto; padding-top: 32px; display: grid; gap: 14px; }
+.nav-sheet .sheet-foot .nav-cta { justify-content: center; padding: 14px; font-size: 16px; }
+.nav-sheet .sheet-foot .nav-block { display: inline-flex; justify-self: start; }
+body.nav-open { overflow: hidden; }
+
+/* footer */
+.site-foot {
+  background: #163300; color: rgba(255, 255, 255, 0.62); border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: "Inter", system-ui, sans-serif; font-size: 14px; letter-spacing: -0.01em;
+}
+.foot-inner { max-width: 1200px; margin: 0 auto; padding: 56px clamp(16px, 4vw, 40px) 32px; }
+.foot-top { display: grid; gap: 40px; }
+@media (min-width: 760px) { .foot-top { grid-template-columns: 1.6fr 1fr 1fr 1fr; } }
+.foot-brand img { height: 32px; width: auto; display: block; }
+.foot-brand p { margin: 16px 0 0; max-width: 300px; line-height: 1.55; }
+.foot-tag { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 18px; }
+.foot-tag i { font-style: normal; color: #16e2bb; margin: 0 0.5em; }
+.foot-col h4 { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin: 0 0 14px; }
+.foot-col a { display: block; color: rgba(255, 255, 255, 0.82); text-decoration: none; padding: 5px 0; transition: color 0.2s; }
+.foot-col a:hover { color: #FCFF52; }
+.foot-bottom {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 48px; padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 12.5px; color: rgba(255,255,255,0.5);
+}
+.foot-bottom code { font-family: "IBM Plex Mono", monospace; color: #FCFF52; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-pulse { animation: none; }
+  .nav-sheet { animation: none; }
+}

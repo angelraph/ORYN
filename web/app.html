@@ -65,14 +65,6 @@
     content: "ORYN"; position: absolute; right: -0.08em; bottom: -0.28em; font-family: var(--font-display); font-weight: 900;
     font-size: clamp(160px, 26vw, 360px); letter-spacing: -0.06em; line-height: 1; color: var(--forest-2); pointer-events: none;
   }
-  header.site .wrap { max-width: 1200px; height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .logo { display: flex; align-items: center; text-decoration: none; }
-  .logo img { height: 30px; width: auto; display: block; }
-  nav.top { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 500; }
-  nav.top a { color: var(--paper); text-decoration: none; opacity: 0.8; } nav.top a:hover { opacity: 1; }
-  .live-chip { display: none; align-items: center; gap: 8px; color: rgba(255,255,255,0.75); padding: 6px 12px 6px 9px; border: 1px solid rgba(255,255,255,0.2); border-radius: 9999px; text-decoration: none; }
-  @media (min-width: 640px) { .live-chip { display: inline-flex; } }
-  .live-chip b { color: var(--volt); font-weight: 500; font-variant-numeric: tabular-nums; }
   .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--volt); animation: pulse 1.6s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(252,255,82,0.6); } 70% { box-shadow: 0 0 0 7px rgba(252,255,82,0); } 100% { box-shadow: 0 0 0 0 rgba(252,255,82,0); } }
 
@@ -209,31 +201,48 @@
   details.payer ul { margin: 10px 0 2px; padding-left: 18px; font-size: 13.5px; color: var(--charcoal); }
   details.payer li { margin: 6px 0; }
 
-  footer { padding: 0 0 48px; font-size: 13px; color: var(--slate); }
-  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; }
-  footer code { font-family: var(--font-mono); color: var(--forest); }
-  footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
-  footer .links a { text-decoration: none; color: var(--charcoal); } footer .links a:hover { color: var(--forest); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
 </style>
+<link rel="stylesheet" href="/assets/site.css" />
+<script src="/assets/nav.js" defer></script>
 </head>
-<body>
+<body data-page="app">
+
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/" data-nav="home">Home</a>
+      <a href="/app" data-nav="app">App</a>
+      <a href="/docs" data-nav="docs">Docs</a>
+      <a href="/#how">How it works</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub<span class="ext">&nbsp;↗</span></a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+      <a class="nav-cta" href="/app">Open app</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="nav-sheet" id="navSheet" hidden>
+  <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
+  <a class="big" href="/app" data-nav="app">App <small>Pay · Rules · Withdraw</small></a>
+  <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
+  <a class="big" href="/#faq">FAQ <small>Quick answers</small></a>
+  <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
+  <div class="sheet-foot">
+    <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+    <a class="nav-cta" href="/app">Open the app</a>
+  </div>
+</div>
+
 
 <div class="band">
-  <header class="site">
-    <div class="wrap">
-      <a class="logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
-      <nav class="top">
-        <a class="live-chip mono" id="liveChip" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="pulse"></span>Celo <b id="liveBlock">live</b></a>
-        <a href="/">Home</a>
-        <a href="/docs">Docs</a>
-        <a href="https://github.com/angelraph/ORYN">GitHub</a>
-      </nav>
-    </div>
-  </header>
   <div class="wrap page-head">
     <div class="mono">ORYN app · Celo mainnet</div>
     <h1>Pay in. <span>Split out.</span></h1>
@@ -353,15 +362,39 @@
   </div>
 </main>
 
-<footer>
-  <div class="wrap">
-    <span>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · <code>celo_2a23542d598e</code></span>
-    <div class="links">
-      <a href="/">Home</a>
-      <a href="/docs">Docs</a>
-      <a href="https://github.com/angelraph/ORYN">GitHub</a>
-      <a href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19">Celoscan</a>
-      <a href="https://8004scan.io/agents/celo/9688">8004scan</a>
+<footer class="site-foot">
+  <div class="foot-inner">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="/assets/oryn-logo-light.png" alt="ORYN" width="98" height="32" />
+        <p>Autonomous treasury agent on Celo. Every payment you receive is split onchain, automatically, without ORYN ever holding your money.</p>
+        <div class="foot-tag">Pay<i>/</i>Split<i>/</i>Grow</div>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="/app">Open the app</a>
+        <a href="/app?tab=deposit">Pay a vault</a>
+        <a href="/app?tab=rules">Set rules</a>
+        <a href="/app?tab=withdraw">Withdraw</a>
+      </div>
+      <div class="foot-col">
+        <h4>Learn</h4>
+        <a href="/docs">Docs</a>
+        <a href="/docs#quickstart">Quickstart</a>
+        <a href="/docs#security">Security model</a>
+        <a href="/#faq">FAQ</a>
+      </div>
+      <div class="foot-col">
+        <h4>Verify</h4>
+        <a href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19" target="_blank" rel="noopener">Vault factory ↗</a>
+        <a href="https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26" target="_blank" rel="noopener">Agent wallet ↗</a>
+        <a href="https://8004scan.io/agents/celo/9688" target="_blank" rel="noopener">Agent identity ↗</a>
+        <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">Source code ↗</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 ORYN · oryn.click</span>
+      <span>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · <code>celo_2a23542d598e</code></span>
     </div>
   </div>
 </footer>
@@ -1064,23 +1097,6 @@
     } catch (err) { setTxError(fundStatus, err); }
   });
 
-  // ============ Live block height in the header ============
-  (function liveBlock() {
-    const el = document.getElementById("liveBlock");
-    async function tick() {
-      if (document.hidden) return;
-      try {
-        const res = await fetch(RPC, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
-        });
-        const json = await res.json();
-        if (json.result) el.textContent = "#" + parseInt(json.result, 16).toLocaleString("en-US");
-      } catch {}
-    }
-    tick();
-    setInterval(tick, 3000);
-  })();
 </script>
 
 </body>
