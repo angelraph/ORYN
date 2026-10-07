@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ORYN: Every payment splits itself</title>
 <meta name="description" content="ORYN is an autonomous treasury agent on Celo. Every payment you receive is split, saved, and paid out onchain, automatically and non-custodially." />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<meta property="og:title" content="ORYN: Autonomous treasury agent" />
+<meta property="og:description" content="Pay / Split / Grow. Every payment you receive is split onchain on Celo, automatically and non-custodially." />
+<meta property="og:image" content="assets/oryn-og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@800;900&family=IBM+Plex+Mono:wght@400;500&family=Adamina&display=swap" rel="stylesheet" />
@@ -21,6 +26,7 @@
     --forest-2: #1d4200;
     --spruce: #054d28;
     --volt: #FCFF52;
+    --mint: #16e2bb; /* from the ORYN logo ribbon; used sparingly, never as a fill */
     --paper: #ffffff;
     --oat: #f7f4f1;
     --fog: #e8ebe6;
@@ -58,12 +64,10 @@
     transition: background 0.35s var(--ease), box-shadow 0.35s var(--ease), color 0.35s var(--ease);
     color: var(--paper);
   }
-  header.site.scrolled { background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); color: var(--forest); box-shadow: 0 1px 0 rgba(14,15,12,0.08); }
+  header.site.scrolled { background: rgba(22,51,0,0.9); backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(255,255,255,0.08); }
   header.site .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .logo { font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: -0.04em; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-  .logo-mark { width: 22px; height: 22px; border-radius: 50%; background: var(--volt); position: relative; overflow: hidden; }
-  .logo-mark::after { content: ""; position: absolute; inset: 0 50% 0 0; background: var(--forest); transition: inset 0.35s var(--ease); }
-  header.site:not(.scrolled) .logo-mark::after { background: var(--forest-2); }
+  .logo { display: flex; align-items: center; text-decoration: none; }
+  .logo img { height: 30px; width: auto; display: block; }
   nav.top { display: none; gap: 28px; font-size: 14px; font-weight: 500; letter-spacing: -0.02em; }
   nav.top a { text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
   nav.top a:hover { opacity: 1; }
@@ -110,10 +114,10 @@
   .cycle { position: relative; display: block; height: 0.98em; overflow: hidden; color: var(--volt); }
   .cycle span {
     position: absolute; left: 0; top: 0; white-space: nowrap;
-    transform: translateY(105%); opacity: 0; transition: transform 0.7s var(--ease), opacity 0.7s var(--ease);
+    transform: translateY(140%); opacity: 0; transition: transform 0.7s var(--ease), opacity 0.7s var(--ease);
   }
   .cycle span.on { transform: translateY(0); opacity: 1; }
-  .cycle span.off { transform: translateY(-105%); opacity: 0.4; }
+  .cycle span.off { transform: translateY(-140%); opacity: 0.4; }
   .hero-sub { max-width: 460px; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; color: rgba(255,255,255,0.78); margin: 32px 0 34px; }
   .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; }
 
@@ -225,12 +229,43 @@
   .verify a:hover { padding-left: 8px; }
   .verify a .mono { color: var(--slate); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 13px; }
 
+  /* faq */
+  .faq-grid { display: grid; gap: 40px; }
+  @media (min-width: 900px) { .faq-grid { grid-template-columns: 1fr 1.5fr; gap: 64px; } }
+  .faq-side p { color: var(--charcoal); font-size: 17px; margin: 24px 0 28px; max-width: 360px; }
+  .faq { border-top: 1px solid var(--fog); }
+  .faq details { border-bottom: 1px solid var(--fog); }
+  .faq summary {
+    list-style: none; cursor: pointer; padding: 22px 48px 22px 0; position: relative;
+    font-weight: 600; color: var(--obsidian); font-size: 18px; letter-spacing: -0.02em; transition: color 0.2s;
+  }
+  .faq summary:hover { color: var(--forest); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: ""; position: absolute; right: 4px; top: 50%; width: 28px; height: 28px; margin-top: -14px; border-radius: 50%;
+    background: var(--oat) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5v9M3.5 8h9' stroke='%23163300' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/14px no-repeat;
+    transition: transform 0.35s var(--ease), background-color 0.35s;
+  }
+  .faq details[open] summary::after { transform: rotate(45deg); background-color: var(--volt); }
+  .faq .a { padding: 0 48px 22px 0; color: var(--charcoal); font-size: 16px; animation: faqIn 0.45s var(--ease); }
+  .faq .a p { margin: 0; }
+  @keyframes faqIn { from { opacity: 0; transform: translateY(-6px); } }
+  .faq code { font-family: var(--font-mono); font-size: 0.85em; background: var(--oat); padding: 2px 6px; border-radius: 6px; }
+
   /* final cta */
   .final { background: var(--forest); color: var(--paper); text-align: center; overflow: hidden; position: relative; }
   .final h2.big { color: var(--paper); font-size: clamp(56px, 11vw, 160px); }
   .final h2.big span { color: var(--volt); }
   .final p { color: rgba(255,255,255,0.72); margin: 26px auto 34px; max-width: 460px; font-size: 17px; }
 
+  .final-mark { display: block; width: 120px; height: auto; margin: 0 auto 26px; filter: drop-shadow(0 18px 40px rgba(22,226,187,0.25)); }
+  .final-mark.in { animation: float 6s ease-in-out infinite 1s; }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(-4deg); } }
+  .tagline { color: rgba(255,255,255,0.75); letter-spacing: 0.3em; margin-bottom: 26px; }
+  .tagline i { font-style: normal; color: var(--mint); margin: 0 0.6em; }
+  .foot-brand { display: flex; align-items: center; gap: 14px; flex-basis: 100%; margin-bottom: 8px; }
+  .foot-brand img { height: 32px; width: auto; }
+  .foot-brand .mono { color: rgba(255,255,255,0.5); letter-spacing: 0.22em; font-size: 11px; }
   footer { background: var(--forest); color: rgba(255,255,255,0.6); border-top: 1px solid rgba(255,255,255,0.1); padding: 28px 0 40px; font-size: 13px; }
   footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
   footer .links { display: flex; gap: 22px; flex-wrap: wrap; }
@@ -247,10 +282,12 @@
 
 <header class="site" id="siteHeader">
   <div class="wrap">
-    <a class="logo" href="#top"><span class="logo-mark"></span>ORYN</a>
+    <a class="logo" href="#top" aria-label="ORYN home"><img src="assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
     <nav class="top">
       <a href="#how">How it works</a>
       <a href="#verify">Verify</a>
+      <a href="#faq">FAQ</a>
+      <a href="docs.html">Docs</a>
       <a href="https://github.com/angelraph/ORYN">GitHub</a>
     </nav>
     <a class="pill volt sm" href="app.html">Open app</a>
@@ -357,9 +394,32 @@
     </div>
   </section>
 
+  <!-- FAQ -->
+  <section id="faq" style="padding-top:0">
+    <div class="wrap faq-grid">
+      <div class="faq-side">
+        <div class="eyebrow mono reveal">FAQ</div>
+        <h2 class="big reveal d1">Good<br />questions.</h2>
+        <p class="reveal d2">The short answers. The docs cover vaults, rules, the agent and the security model in full.</p>
+        <a class="pill forest reveal d3" href="docs.html">Read the docs</a>
+      </div>
+      <div class="faq reveal d1">
+        <details><summary>Does ORYN ever hold my money?</summary><div class="a"><p>No. Your funds sit in your own vault contract, and only your wallet can withdraw or change rules. The agent can only trigger the split you already approved.</p></div></details>
+        <details><summary>What does it cost?</summary><div class="a"><p>ORYN takes no cut of your payments. You pay normal Celo gas, fractions of a cent, for the transactions you sign. The agent pays its own gas and fees for every split.</p></div></details>
+        <details><summary>How fast is a payment split?</summary><div class="a"><p>The agent checks every 15 seconds, so a split usually lands within about 30 seconds of a payment confirming.</p></div></details>
+        <details><summary>What if I get paid before setting rules?</summary><div class="a"><p>The money is safe in your vault as savings. Withdraw it any time, and set your rules so the next payment is split.</p></div></details>
+        <details><summary>Can I change my split later?</summary><div class="a"><p>Yes, as often as you like. New rules replace the old ones and apply from the next payment onward.</p></div></details>
+        <details><summary>Do the people I pay need an account?</summary><div class="a"><p>No. They just need a wallet address. Their share arrives there as cUSD automatically.</p></div></details>
+        <details><summary>Can I stop using the ORYN agent?</summary><div class="a"><p>Yes. Call <code>setAgent</code> from your wallet and ORYN loses every permission on your vault. Nothing else changes.</p></div></details>
+      </div>
+    </div>
+  </section>
+
   <!-- FINAL CTA -->
   <section class="final">
     <div class="wrap">
+      <img class="final-mark reveal" src="assets/oryn-mark.png" alt="" width="120" height="112" />
+      <div class="tagline mono reveal">Pay <i>/</i> Split <i>/</i> Grow</div>
       <h2 class="big reveal">Get paid.<br /><span>Done.</span></h2>
       <p class="reveal d1">Create your vault, set your split, and share your address. Nothing moves until you approve it in your own wallet.</p>
       <a class="pill volt reveal d2" href="app.html">Open the app</a>
@@ -369,9 +429,14 @@
 
 <footer>
   <div class="wrap">
+    <div class="foot-brand">
+      <img src="assets/oryn-logo-light.png" alt="ORYN" width="98" height="32" />
+      <span class="mono">Autonomous treasury agent</span>
+    </div>
     <span>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · <code>celo_2a23542d598e</code></span>
     <div class="links">
       <a href="app.html">App</a>
+      <a href="docs.html">Docs</a>
       <a href="https://github.com/angelraph/ORYN">GitHub</a>
       <a href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19">Celoscan</a>
       <a href="https://8004scan.io/agents/celo/9688">8004scan</a>

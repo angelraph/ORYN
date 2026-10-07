@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN Docs</title>
+<meta name="description" content="How ORYN works: vaults, split rules, the agent, the security model, contract addresses, and answers to common questions." />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* Same system as index.html and app.html. Docs lean on Mollie's editorial reading
+     rhythm: white canvas, mono labels, oat callouts, generous line length limits. */
+  :root {
+    --forest: #163300;
+    --forest-2: #1d4200;
+    --volt: #FCFF52;
+    --mint: #16e2bb;
+    --paper: #ffffff;
+    --oat: #f7f4f1;
+    --fog: #e8ebe6;
+    --obsidian: #0e0f0c;
+    --charcoal: #454745;
+    --slate: #6a6c6a;
+    --linen: #e2f6d5;
+    --pending: #8b6900;
+    --pending-bg: #fdf8d9;
+    --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+    --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+  body {
+    margin: 0; background: var(--paper); color: var(--charcoal);
+    font-family: var(--font-ui); font-size: 16.5px; line-height: 1.7; letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  a { color: var(--forest); text-underline-offset: 3px; }
+  .mono { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+
+  /* header */
+  header.site { position: sticky; top: 0; z-index: 20; background: rgba(22,51,0,0.94); backdrop-filter: blur(14px); }
+  header.site .wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .logo img { height: 28px; width: auto; display: block; }
+  .logo .tag { color: rgba(255,255,255,0.55); border-left: 1px solid rgba(255,255,255,0.2); padding-left: 12px; }
+  nav.top { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 500; }
+  nav.top a { color: var(--paper); text-decoration: none; opacity: 0.8; } nav.top a:hover { opacity: 1; }
+  .pill { display: inline-flex; align-items: center; border-radius: 9999px; padding: 8px 18px; font-weight: 600; font-size: 14px; text-decoration: none; background: var(--volt); color: var(--forest) !important; opacity: 1 !important; }
+  @media (max-width: 560px) { nav.top .hide-sm, .logo .tag { display: none; } }
+
+  .intro { background: var(--forest); color: var(--paper); padding: 64px 0 72px; position: relative; overflow: hidden; }
+  .intro::after {
+    content: "DOCS"; position: absolute; right: -0.05em; bottom: -0.3em; font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(140px, 22vw, 320px); letter-spacing: -0.06em; line-height: 1; color: var(--forest-2); pointer-events: none;
+  }
+  .intro .mono { color: rgba(255,255,255,0.6); }
+  .intro h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(44px, 7vw, 84px); line-height: 0.9; letter-spacing: -0.045em; margin: 14px 0 18px; position: relative; z-index: 1; }
+  .intro h1 span { color: var(--volt); }
+  .intro p { max-width: 560px; color: rgba(255,255,255,0.78); margin: 0; font-size: 17px; position: relative; z-index: 1; }
+
+  /* layout */
+  .layout { display: grid; gap: 56px; padding-top: 56px; padding-bottom: 96px; }
+  @media (min-width: 980px) { .layout { grid-template-columns: 220px minmax(0, 1fr); } }
+  .toc { display: none; }
+  @media (min-width: 980px) {
+    .toc { display: block; position: sticky; top: 96px; align-self: start; max-height: calc(100vh - 120px); overflow: auto; }
+  }
+  .toc .mono { color: var(--slate); margin-bottom: 12px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--fog); }
+  .toc a {
+    display: block; padding: 6px 0 6px 16px; margin-left: -1px; border-left: 2px solid transparent;
+    font-size: 14px; color: var(--slate); text-decoration: none; transition: color 0.2s, border-color 0.2s;
+  }
+  .toc a:hover { color: var(--forest); }
+  .toc a.active { color: var(--forest); border-left-color: var(--forest); font-weight: 600; }
+
+  article { max-width: 720px; min-width: 0; }
+  article section { padding-bottom: 56px; margin-bottom: 56px; border-bottom: 1px solid var(--fog); }
+  article section:last-child { border-bottom: none; }
+  article .mono.kicker { color: var(--slate); display: block; margin-bottom: 8px; }
+  h2 { font-family: var(--font-display); font-weight: 900; color: var(--obsidian); font-size: clamp(30px, 4vw, 42px); letter-spacing: -0.04em; line-height: 1; margin: 0 0 20px; }
+  h3 { font-family: var(--font-ui); font-weight: 700; color: var(--obsidian); font-size: 18px; letter-spacing: -0.02em; margin: 32px 0 8px; }
+  p { margin: 0 0 16px; }
+  strong { color: var(--obsidian); font-weight: 600; }
+  code { font-family: var(--font-mono); font-size: 0.84em; background: var(--oat); padding: 2px 7px; border-radius: 6px; color: var(--obsidian); word-break: break-word; }
+  ul, ol.steps { padding-left: 20px; margin: 0 0 16px; } li { margin: 6px 0; }
+
+  ol.steps { list-style: none; padding: 0; counter-reset: s; display: grid; gap: 12px; }
+  ol.steps li { counter-increment: s; position: relative; background: var(--oat); border-radius: 16px; padding: 18px 20px 18px 64px; margin: 0; }
+  ol.steps li::before {
+    content: counter(s, decimal-leading-zero); position: absolute; left: 20px; top: 18px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--forest);
+    background: var(--volt); border-radius: 9999px; padding: 3px 7px; line-height: 1.4;
+  }
+  ol.steps li strong { display: block; margin-bottom: 2px; }
+
+  .callout { border-radius: 14px; padding: 16px 18px; margin: 20px 0; font-size: 15px; background: var(--linen); color: var(--forest); }
+  .callout.warn { background: var(--pending-bg); color: var(--pending); }
+  .callout strong { color: inherit; }
+  .callout .mono { display: block; margin-bottom: 4px; opacity: 0.8; }
+
+  .table-wrap { overflow-x: auto; margin: 20px 0; border-radius: 14px; border: 1px solid var(--fog); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 460px; }
+  th { font-family: var(--font-mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); text-align: left; background: var(--oat); }
+  th, td { padding: 11px 14px; border-bottom: 1px solid var(--fog); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.yes { color: #1e681d; font-weight: 600; } td.no { color: #99001c; font-weight: 600; }
+
+  pre { background: var(--forest); color: #eef3ea; border-radius: 14px; padding: 18px 20px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 20px 0; }
+  pre .c { color: rgba(255,255,255,0.5); } pre .h { color: var(--volt); }
+
+  .addr-list { display: grid; gap: 0; border-top: 1px solid var(--fog); margin: 20px 0; }
+  .addr-list a { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--fog); text-decoration: none; color: var(--obsidian); font-weight: 500; flex-wrap: wrap; }
+  .addr-list a span { font-family: var(--font-mono); font-size: 12.5px; color: var(--slate); word-break: break-all; font-weight: 400; }
+
+  /* FAQ accordion */
+  .faq { border-top: 1px solid var(--fog); }
+  .faq details { border-bottom: 1px solid var(--fog); }
+  .faq summary {
+    list-style: none; cursor: pointer; padding: 18px 40px 18px 0; position: relative;
+    font-weight: 600; color: var(--obsidian); font-size: 16.5px; letter-spacing: -0.015em;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: ""; position: absolute; right: 4px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%;
+    background: var(--oat) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5v9M3.5 8h9' stroke='%23163300' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/12px no-repeat;
+    transition: transform 0.3s var(--ease), background-color 0.3s;
+  }
+  .faq details[open] summary::after { transform: rotate(45deg); background-color: var(--volt); }
+  .faq .a { padding: 0 40px 18px 0; color: var(--charcoal); }
+  .faq .a p:last-child { margin-bottom: 0; }
+
+  footer { background: var(--forest); color: rgba(255,255,255,0.6); padding: 28px 0 40px; font-size: 13px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
+  footer img { height: 28px; width: auto; display: block; }
+  footer .links { display: flex; gap: 20px; flex-wrap: wrap; }
+  footer a { text-decoration: none; color: inherit; } footer a:hover { color: var(--paper); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="ORYN home"><img src="assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" /><span class="tag mono">Docs</span></a>
+    <nav class="top">
+      <a class="hide-sm" href="index.html">Home</a>
+      <a class="hide-sm" href="https://github.com/angelraph/ORYN">GitHub</a>
+      <a class="pill" href="app.html">Open app</a>
+    </nav>
+  </div>
+</header>
+
+<div class="intro">
+  <div class="wrap">
+    <div class="mono">ORYN documentation</div>
+    <h1>Everything about<br /><span>how ORYN works.</span></h1>
+    <p>Vaults, split rules, the agent, and exactly what it can and cannot do with your money. Read it in ten minutes.</p>
+  </div>
+</div>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="On this page">
+    <div class="mono">On this page</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#quickstart">Quickstart</a></li>
+      <li><a href="#rules">Writing your split</a></li>
+      <li><a href="#getting-paid">Getting paid</a></li>
+      <li><a href="#agent">How the agent works</a></li>
+      <li><a href="#security">Security model</a></li>
+      <li><a href="#withdraw">Withdrawing</a></li>
+      <li><a href="#contracts">Contracts &amp; addresses</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <section id="overview">
+      <span class="mono kicker">01 · Overview</span>
+      <h2>What ORYN is</h2>
+      <p>ORYN is an autonomous treasury agent on Celo. You get a <strong>vault</strong>, a small smart contract that only you control. You tell it how to split incoming money, for example "30% to my designer, 20% to savings". From then on, every cUSD payment that lands in your vault is split automatically by the ORYN agent, onchain.</p>
+      <p>It is built for freelancers, creators and small teams who do the same bookkeeping every time they get paid. You describe the rule once and stop thinking about it.</p>
+      <div class="callout"><span class="mono">The one-line version</span><strong>Pay / Split / Grow.</strong> Money comes in, gets split by your rule, and whatever you don't allocate grows in your vault as savings.</div>
+    </section>
+
+    <section id="quickstart">
+      <span class="mono kicker">02 · Quickstart</span>
+      <h2>Set up in four steps</h2>
+      <ol class="steps">
+        <li><strong>Connect a wallet</strong>Open the <a href="app.html">ORYN app</a> and connect MetaMask or any browser wallet. It will offer to switch to Celo mainnet for you.</li>
+        <li><strong>Create your vault</strong>Click <em>Create my vault</em>. One transaction, a fraction of a cent in gas. Each wallet gets exactly one vault.</li>
+        <li><strong>Set your split</strong>On the <a href="app.html?tab=rules">Set Rules</a> tab, write your split in plain English, check the table ORYN builds from it, and sign. Do this before anyone pays you.</li>
+        <li><strong>Share your vault address</strong>Send it to whoever owes you money. They pay in cUSD from the <a href="app.html?tab=deposit">Deposit</a> tab, and ORYN splits it automatically.</li>
+      </ol>
+      <div class="callout warn"><span class="mono">Don't skip step 3</span>A vault with no rules still accepts payments, but nothing gets paid out. The whole deposit stays in the vault as savings. You can set rules later, but they only apply to payments that arrive after that.</div>
+    </section>
+
+    <section id="rules">
+      <span class="mono kicker">03 · Rules</span>
+      <h2>Writing your split</h2>
+      <p>A rule is a recipient address and a percentage. You can have several. Whatever is left after all rules stays in your vault as savings.</p>
+      <h3>Plain English works</h3>
+      <p>Save a name for each recipient once (it is stored only in your browser), then write things like:</p>
+      <pre><span class="c"># one collaborator, rest saved</span>
+pay <span class="h">designer</span> 30%, rest stays as savings
+
+<span class="c"># two recipients</span>
+pay <span class="h">designer</span> 30% and <span class="h">editor</span> 15%</pre>
+      <p>ORYN turns this into a table you can edit before signing. Nothing is guessed silently: if a name isn't in your address book or the numbers don't add up, you'll see a warning instead of a transaction.</p>
+      <h3>Worked example</h3>
+      <p>Rules: designer 30%, editor 15%. A client pays 100 cUSD.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Goes to</th><th>Share</th><th>Amount</th></tr></thead>
+        <tbody>
+          <tr><td>Designer's wallet</td><td>30%</td><td>30 cUSD</td></tr>
+          <tr><td>Editor's wallet</td><td>15%</td><td>15 cUSD</td></tr>
+          <tr><td>Your vault savings</td><td>remainder</td><td>55 cUSD</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Limits and details</h3>
+      <ul>
+        <li>Percentages can add up to <strong>at most 100%</strong>. The contract rejects anything higher.</li>
+        <li>Shares are stored in basis points (1% = 100 bps), so you can use values like 12.5%.</li>
+        <li>Rounding always goes down; any dust lands in your savings, never somewhere else.</li>
+        <li>You can change your rules any time. A new set fully replaces the old one and applies to the next split.</li>
+      </ul>
+    </section>
+
+    <section id="getting-paid">
+      <span class="mono kicker">04 · Getting paid</span>
+      <h2>Getting paid</h2>
+      <p>Your vault address is your payment address. Anyone can pay into it; they don't need a vault or an account. A payer needs:</p>
+      <ul>
+        <li><strong>A browser wallet</strong> such as MetaMask.</li>
+        <li><strong>A little CELO</strong> for gas. A fraction of a cent is enough.</li>
+        <li><strong>cUSD</strong> for the amount. CELO can be swapped for cUSD non-custodially at <a href="https://app.mento.org" target="_blank" rel="noopener">app.mento.org</a>.</li>
+      </ul>
+      <p>In the app, the payer pastes your vault address on the Deposit tab and clicks <em>Pay</em>. The app handles the token approval and the deposit in order, and checks that the address really is an ORYN vault before anything is sent.</p>
+      <div class="callout warn"><span class="mono">Send through the app</span>Use the Deposit tab rather than a plain token transfer. A direct cUSD transfer to the vault does not go through <code>deposit()</code>, so it isn't counted as a payment and won't be split. The owner can still withdraw it.</div>
+    </section>
+
+    <section id="agent">
+      <span class="mono kicker">05 · The agent</span>
+      <h2>How the agent works</h2>
+      <p>The ORYN agent is a small always-on program with its own wallet. Its job is narrow:</p>
+      <ol class="steps">
+        <li><strong>Watch</strong>Every 15 seconds it checks Celo mainnet for new vaults and new deposits.</li>
+        <li><strong>Split</strong>When a vault has an unsplit deposit, it calls <code>distribute()</code> on that vault. The contract pays each recipient their share and credits the rest to savings. Splits usually land within about 30 seconds of a payment.</li>
+        <li><strong>Categorize</strong>For each payout, the agent pays ORYN's bookkeeping service $0.01 in USDC over the <a href="https://x402.celo.org" target="_blank" rel="noopener">x402 protocol</a> to label it. The agent pays this from its own wallet, never from yours.</li>
+      </ol>
+      <p>Every transaction the agent sends, and every transaction you sign in the app, carries ORYN's public attribution tag <code>celo_2a23542d598e</code>, so all activity can be independently traced. The agent is registered onchain under ERC-8004 as <a href="https://8004scan.io/agents/celo/9688" target="_blank" rel="noopener">agentId 9688</a>.</p>
+    </section>
+
+    <section id="security">
+      <span class="mono kicker">06 · Security</span>
+      <h2>Security model</h2>
+      <p>ORYN is non-custodial. The limits below are enforced by the vault contract itself, not by a policy or a promise.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Action</th><th>You (owner)</th><th>ORYN agent</th><th>Anyone else</th></tr></thead>
+        <tbody>
+          <tr><td>Pay into the vault</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Run the split (<code>distribute</code>)</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>Set or change rules</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Withdraw funds</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Replace or remove the agent</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+        </tbody>
+      </table></div>
+      <p>The worst the agent can ever do is run your split at a moment you didn't choose, which only ever sends money where you already said it should go. If you want ORYN out entirely, call <code>setAgent</code> from your owner wallet and the agent loses even that.</p>
+      <div class="callout"><span class="mono">Audit it yourself</span>The full contract is about 140 lines. Read <a href="https://github.com/angelraph/ORYN/blob/main/contracts/OrynVault.sol" target="_blank" rel="noopener">OrynVault.sol</a> on GitHub; the permission checks are the <code>onlyOwner</code> and <code>onlyAgentOrOwner</code> modifiers.</div>
+    </section>
+
+    <section id="withdraw">
+      <span class="mono kicker">07 · Withdrawing</span>
+      <h2>Withdrawing</h2>
+      <p>Your savings sit in your vault until you move them. On the <a href="app.html?tab=withdraw">Withdraw</a> tab, check your savings balance, enter an amount, and choose where it goes (your connected wallet by default). Only the owner wallet can withdraw, and there is no lock-up or fee.</p>
+    </section>
+
+    <section id="contracts">
+      <span class="mono kicker">08 · Reference</span>
+      <h2>Contracts &amp; addresses</h2>
+      <p>Everything runs on <strong>Celo mainnet</strong> (chain ID 42220).</p>
+      <div class="addr-list">
+        <a href="https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19" target="_blank" rel="noopener">Vault factory <span>0xcb45e24d147262302b6e7dac579e8ae4d879ef19</span></a>
+        <a href="https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26" target="_blank" rel="noopener">Agent wallet <span>0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26</span></a>
+        <a href="https://celoscan.io/token/0x765DE816845861e75A25fCA122bb6898B8B1282a" target="_blank" rel="noopener">cUSD token <span>0x765DE816845861e75A25fCA122bb6898B8B1282a</span></a>
+        <a href="https://celoscan.io/token/0xcebA9300f2b948710d2653dD7B07f33A8B32118C" target="_blank" rel="noopener">USDC (agent fees) <span>0xcebA9300f2b948710d2653dD7B07f33A8B32118C</span></a>
+        <a href="https://8004scan.io/agents/celo/9688" target="_blank" rel="noopener">ERC-8004 identity <span>agentId 9688</span></a>
+      </div>
+      <h3>Vault functions</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Function</th><th>Who</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>deposit(amount)</code></td><td>Anyone</td><td>Pulls approved cUSD into the vault and marks it as waiting to be split.</td></tr>
+          <tr><td><code>distribute()</code></td><td>Agent, owner</td><td>Splits everything waiting by the current rules; the remainder goes to savings.</td></tr>
+          <tr><td><code>setRules(rules)</code></td><td>Owner</td><td>Replaces the split. Total must be at most 10,000 bps (100%).</td></tr>
+          <tr><td><code>withdraw(amount, to)</code></td><td>Owner</td><td>Sends funds from the vault to any address.</td></tr>
+          <tr><td><code>setAgent(agent)</code></td><td>Owner</td><td>Changes which address may trigger splits.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="faq">
+      <span class="mono kicker">09 · FAQ</span>
+      <h2>Frequently asked</h2>
+      <div class="faq">
+        <details><summary>Does ORYN ever hold my money?</summary><div class="a"><p>No. Your funds sit in your own vault contract, and only your owner wallet can withdraw or change rules. The agent can only trigger the split you already approved.</p></div></details>
+        <details><summary>What does it cost?</summary><div class="a"><p>ORYN takes no cut of your payments. You pay normal Celo gas (fractions of a cent) for transactions you sign: creating the vault, setting rules, withdrawing. The agent pays its own gas and x402 fees for every split.</p></div></details>
+        <details><summary>How fast does a payment get split?</summary><div class="a"><p>The agent checks every 15 seconds, so a split usually lands within about 30 seconds of the deposit confirming.</p></div></details>
+        <details><summary>I got paid before setting rules. Where did the money go?</summary><div class="a"><p>It's safe in your vault as savings. A vault with no rules keeps the whole deposit. Withdraw it any time, and set rules now so the next payment is split.</p></div></details>
+        <details><summary>Can I change my split later?</summary><div class="a"><p>Yes, as often as you like. A new set of rules replaces the old one and applies from the next split onward. Past splits are not changed.</p></div></details>
+        <details><summary>What if the agent goes offline?</summary><div class="a"><p>Nothing is lost. Deposits wait in the vault until a split runs. As the owner you can also call <code>distribute()</code> yourself, or withdraw directly.</p></div></details>
+        <details><summary>Can I stop using the ORYN agent?</summary><div class="a"><p>Yes. Call <code>setAgent</code> from your owner wallet with another address (or your own). The ORYN agent then has no permissions on your vault at all.</p></div></details>
+        <details><summary>Which tokens are supported?</summary><div class="a"><p>Vaults created in the app accept cUSD on Celo mainnet. The agent's own bookkeeping fees are paid in USDC.</p></div></details>
+        <details><summary>Do the people I pay need anything?</summary><div class="a"><p>Just a Celo-compatible wallet address. Their share arrives in that wallet as cUSD. They don't need a vault or to sign anything.</p></div></details>
+        <details><summary>Is the code open source?</summary><div class="a"><p>Yes. Contracts, agent and app are all on <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub</a>.</p></div></details>
+      </div>
+    </section>
+
+    <section id="glossary">
+      <span class="mono kicker">10 · Glossary</span>
+      <h2>Glossary</h2>
+      <div class="table-wrap"><table>
+        <tbody>
+          <tr><td><strong>Wallet</strong></td><td>An app like MetaMask that holds your keys and asks you to approve every transaction.</td></tr>
+          <tr><td><strong>cUSD</strong></td><td>A digital dollar on Celo (1 cUSD ≈ $1). The currency ORYN splits.</td></tr>
+          <tr><td><strong>Vault</strong></td><td>Your personal ORYN smart contract. It holds deposits and savings and enforces your rules.</td></tr>
+          <tr><td><strong>Rule / split</strong></td><td>A recipient plus a percentage. Your full split is the list of rules.</td></tr>
+          <tr><td><strong>Savings</strong></td><td>The part of each payment that no rule claims. It stays in your vault.</td></tr>
+          <tr><td><strong>Non-custodial</strong></td><td>No one but you can move your funds. ORYN only runs the split you approved.</td></tr>
+          <tr><td><strong>Gas</strong></td><td>The small network fee for a transaction, paid in CELO.</td></tr>
+          <tr><td><strong>x402</strong></td><td>An open protocol for paying per request over HTTP. The agent uses it to pay for bookkeeping.</td></tr>
+          <tr><td><strong>ERC-8004</strong></td><td>An onchain registry for AI agent identities. ORYN is agentId 9688.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+  </article>
+</div>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" />
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="app.html">App</a>
+      <a href="https://github.com/angelraph/ORYN">GitHub</a>
+      <a href="https://8004scan.io/agents/celo/9688">8004scan</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scrollspy: highlight the section currently being read in the sidebar.
+  const links = [...document.querySelectorAll(".toc a")];
+  const byId = Object.fromEntries(links.map((a) => [a.getAttribute("href").slice(1), a]));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((a) => a.classList.remove("active"));
+      byId[e.target.id]?.classList.add("active");
+    });
+  }, { rootMargin: "-30% 0px -60% 0px" });
+  document.querySelectorAll("article section[id]").forEach((s) => spy.observe(s));
+
+  // Arriving via docs.html#faq opens the first answer so the section doesn't look empty.
+  if (location.hash === "#faq") document.querySelector("#faq details")?.setAttribute("open", "");
+</script>
+
+</body>
+</html>
