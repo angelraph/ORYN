@@ -2,6 +2,8 @@
 
 Built for the [Celo Agentic Payments & DeFAI Hackathon](https://celobuilders.xyz).
 
+**Website:** [oryn.click](https://oryn.click) · [App](https://oryn.click/app) · [Docs](https://oryn.click/docs)
+
 **Every time ORYN receives a payment, it splits it — automatically, onchain, non-custodially.**
 No dashboards, no manual transfers, no spreadsheets. A freelancer, creator, or small
 merchant gets paid in cUSD, and ORYN executes the payout rules they already approved:

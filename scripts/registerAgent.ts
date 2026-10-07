@@ -13,7 +13,7 @@ function buildAgentRegistrationFile(agentId: bigint) {
     description:
       "Non-custodial autonomous treasury agent on Celo. Splits every incoming cUSD payment into owner-approved payouts and savings, executed onchain. The agent wallet can only trigger a pre-approved split; it can never withdraw or redirect funds.",
     services: [
-      { name: "web", endpoint: "https://github.com/angelraph/ORYN" },
+      { name: "web", endpoint: "https://oryn.click" },
       { name: "x402", endpoint: "https://api.x402.celo.org" },
     ],
     x402Support: true,
