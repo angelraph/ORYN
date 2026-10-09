@@ -15,7 +15,7 @@ if (!ATTRIBUTION_TAG) {
  * no matter how real the payment is.
  */
 export async function sendTaggedTransaction(params: {
-  to: `0x${string}`;
+  to?: `0x${string}`; // omit to deploy a contract
   data?: Hex;
   value?: bigint;
   extraCodes?: string[];
