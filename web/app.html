@@ -394,7 +394,7 @@
     </div>
     <div class="foot-bottom">
       <span>© 2026 ORYN · oryn.click</span>
-      <span>Built for the Celo Agentic Payments &amp; DeFAI Hackathon · <code>celo_2a23542d598e</code></span>
+      <span>Built for Celo Agents on Open Rails · <code>celo_4781ba9a079a</code></span>
     </div>
   </div>
 </footer>
@@ -410,13 +410,13 @@
   const DEFAULT_AGENT = "0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26"; // ORYN's agent wallet
   const ZERO_ADDRESS = "0x" + "0".repeat(40);
 
-  // ERC-8021 attribution suffix for ATTRIBUTION_TAG="celo_2a23542d598e" (see agent/src/lib/attribution.ts).
+  // ERC-8021 attribution suffix for ATTRIBUTION_TAG="celo_4781ba9a079a" (Agents on Open Rails entry) (see agent/src/lib/attribution.ts).
   // Appending this to calldata is a no-op for the contract (extra trailing bytes past the
   // ABI-encoded args are ignored) but lets the hackathon indexer attribute the tx to ORYN.
   // Only the agent's own distribute() trigger was tagged before; every tx a real user signs
   // here (create vault, approve, deposit, set rules, withdraw, fund) went untagged, so none
   // of it counted toward ORYN's leaderboard volume no matter how much value moved.
-  const ATTRIBUTION_SUFFIX = "63656c6f5f326132333534326435393865110080218021802180218021802180218021";
+  const ATTRIBUTION_SUFFIX = "63656c6f5f343738316261396130373961110080218021802180218021802180218021";
   function withTag(data) { return data + ATTRIBUTION_SUFFIX; }
 
   function padHex(hex, bytes) { return hex.replace(/^0x/, "").padStart(bytes * 2, "0"); }

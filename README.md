@@ -15,7 +15,7 @@ Every action ORYN takes is a real transaction against a live Celo mainnet contra
 tagged with ORYN's registered attribution code so it's independently verifiable on the
 hackathon leaderboard:
 
-- **Attribution tag:** `celo_2a23542d598e`
+- **Attribution tag:** `celo_4781ba9a079a` (Agents on Open Rails; earlier activity used `celo_2a23542d598e`)
 - **ERC-8004 agent identity:** [agentId 9688](https://8004scan.io/agents/celo/9688)
 - **Vault factory (mainnet):** [`0xcb45e24d147262302b6e7dac579e8ae4d879ef19`](https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19)
 - **Agent wallet:** [`0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26`](https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26)
