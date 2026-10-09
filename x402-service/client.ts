@@ -3,7 +3,7 @@ import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { agentAccount } from "../agent/src/lib/celoClient.js";
 
-const X402_SERVICE_URL = process.env.X402_SERVICE_URL ?? `http://localhost:${process.env.X402_PORT ?? 4021}`;
+const X402_SERVICE_URL = process.env.X402_SERVICE_URL ?? `http://localhost:${process.env.PORT ?? process.env.X402_PORT ?? 4021}`;
 const CELO_NETWORK = "eip155:42220";
 
 const fetchWithPay = wrapFetchWithPaymentFromConfig(fetch, {

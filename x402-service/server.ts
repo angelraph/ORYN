@@ -3,8 +3,10 @@ import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
+import { mountPayHandlers, payRoutes, validatePayLink, x402Cors } from "./pay.js";
 
-const PORT = process.env.X402_PORT ?? 4021;
+// Railway routes public traffic to $PORT; locally (and for the agent's own calls) X402_PORT.
+const PORT = process.env.PORT ?? process.env.X402_PORT ?? 4021;
 const PAY_TO = process.env.X402_SELLER_PAYOUT_ADDRESS as `0x${string}` | undefined;
 const FACILITATOR_URL = process.env.X402_FACILITATOR_URL ?? "https://api.x402.celo.org";
 const USDC_ADDRESS = process.env.USDC_ADDRESS ?? "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
@@ -22,6 +24,10 @@ if (!X402_API_KEY) {
 
 const app = express();
 app.use(express.json());
+app.use(x402Cors);
+app.get("/health", (_req, res) => void res.json({ ok: true }));
+// Bad or turned-off pay links get a free 404/410 instead of a payment request.
+app.use(validatePayLink);
 
 // The facilitator meters verify/settle/supported by X-API-Key. Without this,
 // /settle rejects with 401 "Missing X-API-Key" — verified against Celo's own
@@ -44,6 +50,7 @@ const resourceServer = new x402ResourceServer(facilitatorClient).register(CELO_N
 app.use(
   paymentMiddleware(
     {
+      ...payRoutes,
       "POST /categorize": {
         accepts: {
           scheme: "exact",
@@ -61,6 +68,8 @@ app.use(
     resourceServer,
   ),
 );
+
+mountPayHandlers(app);
 
 app.post("/categorize", (req, res) => {
   const { vault, amount, recipient } = req.body ?? {};

@@ -222,4 +222,37 @@ describe("OrynVaultV2", () => {
     await vault.write.setLinkActive([0n, false], { account: owner.account });
     assert.equal(((await vault.read.getLink([0n])) as Link).active, false);
   });
+
+  it("can't be hijacked: the implementation is locked and each clone initializes exactly once", async () => {
+    const { viem, factory, vault, owner, stranger, wARS } = await deployFixture();
+    const impl = await viem.getContractAt("OrynVaultV2", (await factory.read.implementation()) as `0x${string}`);
+    const init = {
+      owner: stranger.account.address,
+      agent: stranger.account.address,
+      swapTarget: stranger.account.address,
+      tokens: [wARS.address],
+      legs: [{ recipient: stranger.account.address, bps: 10000, payoutToken: zeroAddress }],
+      savingsBps: 0,
+      savingsToken: zeroAddress,
+      capTokens: [],
+      caps: [],
+    };
+    await assert.rejects(impl.write.initialize([init], { account: stranger.account }));
+    await assert.rejects(vault.write.initialize([init], { account: stranger.account }));
+    assert.equal(getAddress((await vault.read.owner()) as string), getAddress(owner.account.address));
+  });
+
+  it("makes creating a vault cheap (minimal clone)", async () => {
+    const { viem, factory, lucia, usat } = await deployFixture();
+    const [, , , , , newcomer] = await viem.getWalletClients();
+    const publicClient = await viem.getPublicClient();
+    const hash = await factory.write.createVault(
+      [[{ recipient: lucia.account.address, bps: 3000, payoutToken: zeroAddress }], 2000, usat.address, [], []],
+      { account: newcomer.account },
+    );
+    const { gasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    console.log(`      createVault gas: ${gasUsed}`);
+    assert.ok(gasUsed < 700_000n, `createVault used ${gasUsed} gas`);
+  });
 });
+

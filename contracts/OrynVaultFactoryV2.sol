@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {OrynVaultV2} from "./OrynVaultV2.sol";
 
 /// @title OrynVaultFactoryV2
 /// @notice Deploys one OrynVaultV2 per owner, with a policy from the first block, and keeps the
 /// index the agent and the pay pages use to find vaults.
 contract OrynVaultFactoryV2 {
+    /// @notice The vault code every owner's clone delegates to. Deployed once, here.
+    address public immutable implementation;
     address public immutable swapTarget;
     address public immutable defaultAgent;
     address[] internal _defaultTokens;
@@ -22,6 +25,7 @@ contract OrynVaultFactoryV2 {
     /// @param _defaultAgent ORYN's agent wallet. Each owner can replace it on their own vault.
     /// @param tokenList Currencies every new vault accepts (wARS, wBRL, wCOP, USA₮, USD₮, USDC, ...).
     constructor(address _swapTarget, address _defaultAgent, address[] memory tokenList) {
+        implementation = address(new OrynVaultV2());
         swapTarget = _swapTarget;
         defaultAgent = _defaultAgent;
         _defaultTokens = tokenList;
@@ -39,7 +43,8 @@ contract OrynVaultFactoryV2 {
     ) external returns (address vault) {
         if (vaultOf[msg.sender] != address(0)) revert VaultAlreadyExists();
 
-        OrynVaultV2 v = new OrynVaultV2(
+        OrynVaultV2 v = OrynVaultV2(Clones.clone(implementation));
+        v.initialize(
             OrynVaultV2.Init({
                 owner: msg.sender,
                 agent: defaultAgent,

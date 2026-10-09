@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /// @title OrynVaultV2
 /// @notice A per-owner, multi-currency treasury that ORYN's agent runs on the owner's behalf.
@@ -23,7 +24,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// split, convert through the one allow-listed swap contract under onchain spend/receive checks
 /// and an owner-set daily cap, or release a stuck conversion to its intended destination. It can
 /// never withdraw, change the policy, add tokens, or send funds anywhere the owner didn't choose.
-contract OrynVaultV2 is ReentrancyGuard {
+///
+/// Each owner's vault is an EIP-1167 minimal clone of one implementation, initialized once by
+/// the factory. A full contract per user cost ~0.5 CELO at Celo's current base fee; a clone costs
+/// a fraction of that, which matters when the user is a freelancer new to crypto.
+contract OrynVaultV2 is ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 
     uint16 public constant MAX_BPS = 10_000;
@@ -53,9 +58,9 @@ contract OrynVaultV2 is ReentrancyGuard {
         string memo;
     }
 
-    address public immutable factory;
+    address public factory;
     /// @notice The only contract `convert` may call: Textile FX's LimitOrderReactor on Celo.
-    address public immutable swapTarget;
+    address public swapTarget;
     address public owner;
     address public agent;
 
@@ -119,7 +124,7 @@ contract OrynVaultV2 is ReentrancyGuard {
         _;
     }
 
-    /// @dev Grouped to keep the constructor readable and under the stack limit.
+    /// @dev Grouped to keep initialize() readable and under the stack limit.
     struct Init {
         address owner;
         address agent;
@@ -134,7 +139,12 @@ contract OrynVaultV2 is ReentrancyGuard {
 
     error LengthMismatch();
 
-    constructor(Init memory init) {
+    /// @dev The implementation itself is never usable; only clones are initialized.
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(Init calldata init) external initializer {
         if (init.owner == address(0) || init.swapTarget == address(0)) revert ZeroAddress();
         if (init.capTokens.length != init.caps.length) revert LengthMismatch();
         factory = msg.sender;
