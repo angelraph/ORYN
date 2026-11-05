@@ -10,7 +10,7 @@ import { celo } from "https://esm.sh/viem@2.55.2/chains";
 
 // ---------------------------------------------------------------- deployment config
 // Set once OrynVaultFactoryV2 is deployed (scripts/deployV2.ts prints it).
-export const ORYN_V2_FACTORY = "";
+export const ORYN_V2_FACTORY = "0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50";
 // Public URL of x402-service (Railway). Serves GET/POST /pay/:vault/:linkId.
 export const ORYN_API = "";
 export const AGENT_ADDRESS = "0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26";
