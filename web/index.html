@@ -17,7 +17,7 @@
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@800;900&family=IBM+Plex+Mono:wght@400;500&family=Adamina&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   /*
     Design system: a blend of three references.
@@ -27,24 +27,24 @@
     The voltage accent is Celo Prosperity Yellow, so the page stays on the Celo brand kit.
   */
   :root {
-    --forest: #163300;
-    --forest-2: #1d4200;
-    --spruce: #054d28;
+    --forest: #476520;
+    --forest-2: #3f5a1c;
+    --spruce: #3a531a;
     --volt: #FCFF52;
-    --mint: #16e2bb; /* from the ORYN logo ribbon; used sparingly, never as a fill */
+    --mint: #56DF7C; /* from the ORYN logo ribbon; used sparingly, never as a fill */
     --paper: #ffffff;
-    --oat: #f7f4f1;
-    --fog: #e8ebe6;
-    --obsidian: #0e0f0c;
-    --charcoal: #454745;
-    --slate: #6a6c6a;
-    --pebble: #868685;
-    --linen: #e2f6d5;
+    --oat: #FCF6F1;
+    --fog: #E7E3D4;
+    --obsidian: #000000;
+    --charcoal: #2b2620;
+    --slate: #655947;
+    --pebble: #8a7d69;
+    --linen: #EAF0DA;
 
-    --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+    --font-display: "Fraunces", "GT Alpina", Georgia, serif;
     --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-    --font-serif: "Adamina", Georgia, serif;
+    --font-serif: "Fraunces", "GT Alpina", Georgia, serif;
 
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
     --max: 1200px;
@@ -72,7 +72,7 @@
     transition: transform 0.25s var(--ease), background 0.25s, color 0.25s;
   }
   .pill:hover { transform: translateY(-1px); }
-  .pill.volt { background: var(--volt); color: var(--forest); }
+  .pill.volt { background: var(--volt); color: #000000; }
   .pill.forest { background: var(--forest); color: var(--paper); }
   .pill.ghost-light { border-color: rgba(255,255,255,0.7); color: var(--paper); }
   .pill.sm { padding: 9px 18px; font-size: 14px; }
@@ -85,7 +85,7 @@
   }
   .hero-giant {
     position: absolute; left: 50%; bottom: -0.2em; transform: translateX(-50%);
-    font-family: var(--font-display); font-weight: 900; font-size: clamp(220px, 46vw, 760px);
+    font-family: var(--font-display); font-weight: 300; font-size: clamp(220px, 46vw, 760px);
     letter-spacing: -0.06em; line-height: 0.8; color: var(--forest-2); z-index: -1; user-select: none;
     white-space: nowrap; will-change: transform;
   }
@@ -99,7 +99,7 @@
   .live-chip .blk { color: var(--volt); font-variant-numeric: tabular-nums; }
 
   h1.display {
-    font-family: var(--font-display); font-weight: 900; margin: 0;
+    font-family: var(--font-display); font-weight: 300; margin: 0;
     font-size: clamp(44px, 10.4vw, 150px); line-height: 0.88; letter-spacing: -0.045em;
   }
   h1.display .line { display: block; }
@@ -148,7 +148,7 @@
   .eyebrow { color: var(--forest); display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px; }
   .eyebrow::before { content: ""; width: 18px; height: 1px; background: currentColor; }
   h2.big {
-    font-family: var(--font-display); font-weight: 900; color: var(--obsidian); margin: 0;
+    font-family: var(--font-display); font-weight: 300; color: var(--obsidian); margin: 0;
     font-size: clamp(40px, 6.4vw, 88px); line-height: 0.92; letter-spacing: -0.045em;
   }
   .reveal { opacity: 0; transform: translateY(32px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
@@ -161,10 +161,10 @@
   .stat { padding: 28px 0 8px; border-bottom: 1px solid var(--fog); }
   @media (min-width: 760px) { .stat { border-bottom: none; padding-right: 24px; } .stat + .stat { border-left: 1px solid var(--fog); padding-left: 28px; } }
   .stat .v {
-    font-family: var(--font-display); font-weight: 900; color: var(--forest);
+    font-family: var(--font-display); font-weight: 300; color: var(--forest);
     font-size: clamp(48px, 6vw, 84px); line-height: 1; letter-spacing: -0.05em; font-variant-numeric: tabular-nums;
   }
-  .stat .v small { font-size: 0.32em; letter-spacing: -0.02em; margin-left: 6px; color: var(--slate); font-weight: 800; }
+  .stat .v small { font-size: 0.32em; letter-spacing: -0.02em; margin-left: 6px; color: var(--slate); font-weight: 400; }
   .stat .k { color: var(--slate); margin-top: 12px; }
 
   /* how it works */
@@ -178,10 +178,10 @@
     background: var(--paper); border-radius: 24px; padding: 32px 28px 30px; display: flex; flex-direction: column; min-height: 340px;
   }
   .card .mono { color: var(--slate); }
-  .card h3 { font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.035em; line-height: 1; color: var(--obsidian); margin: 18px 0 12px; }
+  .card h3 { font-family: var(--font-display); font-weight: 300; font-size: 30px; letter-spacing: -0.035em; line-height: 1; color: var(--obsidian); margin: 18px 0 12px; }
   .card p { margin: 0; color: var(--charcoal); font-size: 15.5px; }
   .card .vis { margin-top: auto; padding-top: 28px; }
-  .card.dark { background: var(--forest); color: var(--paper); box-shadow: 0 24px 48px rgba(22,51,0,0.18); }
+  .card.dark { background: var(--forest); color: var(--paper); box-shadow: 0 24px 48px rgba(71, 101, 32,0.18); }
   .card.dark h3 { color: var(--paper); }
   .card.dark p, .card.dark .mono { color: rgba(255,255,255,0.72); }
 
@@ -271,7 +271,8 @@
     <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
     <nav class="nav-links" aria-label="Main">
       <a href="/" data-nav="home">Home</a>
-      <a href="/app" data-nav="app">App</a>
+      <a href="/vault" data-nav="vault">Vault</a>
+      <a href="/app" data-nav="app">Classic</a>
       <a href="/docs" data-nav="docs">Docs</a>
       <a href="/#how">How it works</a>
       <a href="/#faq">FAQ</a>
@@ -279,20 +280,21 @@
     </nav>
     <div class="nav-right">
       <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-      <a class="nav-cta" href="/app">Open app</a>
+      <a class="nav-cta" href="/vault">Open vault</a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
     </div>
   </div>
 </header>
 <div class="nav-sheet" id="navSheet" hidden>
   <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
-  <a class="big" href="/app" data-nav="app">App <small>Pay · Rules · Withdraw</small></a>
+  <a class="big" href="/vault" data-nav="vault">Vault <small>Pay links · Split · Withdraw</small></a>
+  <a class="big" href="/app" data-nav="app">Classic <small>cUSD vaults (v1)</small></a>
   <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
   <a class="big" href="/#faq">FAQ <small>Quick answers</small></a>
   <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
   <div class="sheet-foot">
     <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-    <a class="nav-cta" href="/app">Open the app</a>
+    <a class="nav-cta" href="/vault">Open your vault</a>
   </div>
 </div>
 
@@ -312,9 +314,9 @@
             <span>pays out.</span>
           </span>
         </h1>
-        <p class="hero-sub rise" style="animation-delay:.35s">Set your split once. ORYN carries it out on every cUSD payment you receive, onchain, in seconds, without ever holding your money.</p>
+        <p class="hero-sub rise" style="animation-delay:.35s">Send a pay link. Get paid in USA₮, USDC, wARS, wBRL or wCOP over x402, gasless for your client. ORYN splits every payment onchain the moment it lands, without ever holding your money.</p>
         <div class="hero-actions rise" style="animation-delay:.45s">
-          <a class="pill volt" href="/app">Open the app</a>
+          <a class="pill volt" href="/vault">Create a pay link</a>
           <a class="text-link" href="#how">See how it works</a>
         </div>
       </div>
@@ -425,7 +427,7 @@
       <div class="tagline mono reveal">Pay <i>/</i> Split <i>/</i> Grow</div>
       <h2 class="big reveal">Get paid.<br /><span>Done.</span></h2>
       <p class="reveal d1">Create your vault, set your split, and share your address. Nothing moves until you approve it in your own wallet.</p>
-      <a class="pill volt reveal d2" href="/app">Open the app</a>
+      <a class="pill volt reveal d2" href="/vault">Open your vault</a>
     </div>
   </section>
 </main>

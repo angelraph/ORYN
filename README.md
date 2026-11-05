@@ -1,86 +1,87 @@
-# ORYN — the autonomous treasury agent
+# ORYN: the autonomous treasury agent
 
-Built for the [Celo Agentic Payments & DeFAI Hackathon](https://celobuilders.xyz).
+Built for **Celo Agents on Open Rails**, primary track **Stable Agents: Open Corridors, USA₮ with x402**.
 
-**Website:** [oryn.click](https://oryn.click) · [App](https://oryn.click/app) · [Docs](https://oryn.click/docs)
+**Website:** [oryn.click](https://oryn.click) · [Vault & pay links](https://oryn.click/vault) · [Classic app](https://oryn.click/app) · [Docs](https://oryn.click/docs)
 
-**Every time ORYN receives a payment, it splits it — automatically, onchain, non-custodially.**
-No dashboards, no manual transfers, no spreadsheets. A freelancer, creator, or small
-merchant gets paid in cUSD, and ORYN executes the payout rules they already approved:
-save a %, pay a collaborator, keep the rest — as real Celo mainnet transactions.
+**Send a pay link. Get paid in USA₮, USDC, wARS, wBRL or wCOP. ORYN splits the payment onchain the moment it lands, without ever holding your money.**
 
-## Why this is not a demo
+A freelancer, creator or small merchant creates a vault once and decides how every payment is divided: say 30% to a designer, 20% saved, the rest kept. They share a pay link. The client pays it over **x402**: one signature, **no gas, no CELO needed**, settled by Celo's facilitator straight into the owner's own vault. ORYN's agent sees the balance arrive and executes the split as a tagged mainnet transaction. Another agent can pay the same link: it's a standard x402 resource.
 
-Every action ORYN takes is a real transaction against a live Celo mainnet contract,
-tagged with ORYN's registered attribution code so it's independently verifiable on the
-hackathon leaderboard:
+## Onchain, verifiable
 
-- **Attribution tag:** `celo_4781ba9a079a` (Agents on Open Rails; earlier activity used `celo_2a23542d598e`)
-- **ERC-8004 agent identity:** [agentId 9688](https://8004scan.io/agents/celo/9688)
-- **Vault factory (mainnet):** [`0xcb45e24d147262302b6e7dac579e8ae4d879ef19`](https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19)
-- **Agent wallet:** [`0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26`](https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26)
-- **First vault (live):** [`0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E`](https://celoscan.io/address/0xc3c92EA811e5fF318E0D12384CdeD13BD3aEee0E)
+| | |
+|---|---|
+| Attribution tag | `celo_4781ba9a079a` (Agents on Open Rails; earlier activity used `celo_2a23542d598e`) |
+| ERC-8004 agent identity | [agentId 9688](https://8004scan.io/agents/celo/9688) |
+| Agent wallet | [`0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26`](https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26) |
+| Vault factory v2 (USA₮, USDC, USD₮, wARS, wBRL, wCOP) | set after `scripts/deployV2.ts` runs: see `ORYN_V2_FACTORY` |
+| Vault factory v1 (cUSD) | [`0xcb45e24d147262302b6e7dac579e8ae4d879ef19`](https://celoscan.io/address/0xcb45e24d147262302b6e7dac579e8ae4d879ef19) |
+| Chain | Celo mainnet, chain id `42220`, RPC `https://forno.celo.org` (Celo Sepolia is `11142220`) |
+
+Every transaction ORYN or its users send goes through one funnel that appends the ERC-8021 tag (`agent/src/lib/attribution.ts`, and `withTag()` / `send()` in the web app). `npx tsx scripts/verifyTags.ts <txHash>` decodes any transaction and confirms the tag.
 
 ## How it works
 
-1. **A user creates a vault** (`OrynVaultFactory.createVault`) and sets a split — e.g.
-   "20% to savings, 30% to my designer, remainder stays in the vault."
-2. **Anyone pays into the vault** (a client settling an invoice, a customer, etc.).
-3. **ORYN's agent detects the deposit** and calls `distribute()` — the *only* action the
-   agent wallet is authorized to take. It cannot withdraw funds or redirect them
-   anywhere the owner didn't already approve. That boundary is enforced onchain, not by
-   trust: see `OrynVault.onlyAgentOrOwner`.
-4. **The split executes as a real transaction**, tagged with ORYN's attribution code
-   (`@celo/attribution-tags`), so it counts on the **Most Revenue Generated** leaderboard.
-5. **ORYN pays itself** via the [x402 protocol](https://x402.celo.org) for a small
-   bookkeeping/categorization step on every distribution — a genuine pay-per-request
-   settlement in USDC, counting toward **Most x402 Payments**.
+```
+client / agent ──x402 sign (no gas)──▶ Celo facilitator ──transfer──▶ OrynVaultV2 (owner's)
+                                                                        │
+                       ORYN agent: pending(token) > 0 ──distribute(token), tagged──┤
+                                                                        ▼
+                                          collaborators · savings · owner's balance
+```
 
-```
-payer ──deposit(cUSD)──▶ OrynVault ──agent calls distribute()──▶ recipients + savings
-                                            │
-                                            └──x402 pay (USDC)──▶ categorization service
-```
+1. **Create a vault** at [/vault](https://oryn.click/vault): one transaction, `OrynVaultFactoryV2.createVault(legs, savingsBps, …)`. A split is mandatory from block one, so a vault can never silently swallow payments with no rules (half of all v1 vaults ended up that way).
+2. **Create a pay link**: currency, amount, memo, one-off / weekly / monthly. It's stored onchain in the vault (`createLink`), so there's no database to trust. Share the URL, the QR code, or the share sheet.
+3. **The client pays** at `oryn.click/pay?v=<vault>&l=<id>`. The page reads the link from the chain, shows exactly how the payment will be split, then pays through `x402-service` (`POST /pay/:vault/:linkId`). The 402 names the link's exact token and amount and `payTo` is the vault, so the facilitator settles the signed authorisation (EIP-3009 for USA₮/USDC/USD₮, Permit2 + EIP-2612 gas sponsoring for wARS/wBRL/wCOP) directly into the vault. A plain wallet transfer works too, as a fallback.
+4. **The agent splits it.** v2 vaults are balance-based, so the agent reads `pending(token)` for every token of every vault in one multicall every 15 s and calls `distribute(token)` once a payment clears a dust floor (about 5¢), so a dust transfer can't make it spend more gas than the split is worth (`agent/src/watcherV2.ts`).
+5. **FX legs (contract-level).** A leg can ask to be paid in another currency. `distribute` queues it onchain, and `convert` can settle it through Textile FX's reactor, guarded by onchain spend/receive checks and an owner-set daily cap. The agent's Textile quote path isn't wired in yet, and the web app creates same-currency splits only. So today a queued leg is released to its recipient in the currency that arrived after 10 minutes, and nobody is left unpaid.
 
 ## Non-custodial by design
 
-The agent wallet can call `distribute()` — nothing else. It can never call `withdraw()`,
-never change `rules`, never touch funds outside the split the *owner* configured. This
-is a hard onchain guarantee (`OrynVault.sol`), not a policy promise.
+The agent can split, convert through the one allow-listed swap contract within the owner's daily cap, or release a queued leg to its own recipient. It can **never** withdraw, change the split, add tokens, or send funds anywhere the owner didn't choose. That is enforced in `OrynVaultV2.sol` (`onlyAgentOrOwner`, `onlyOwner`), not promised. Each owner can also swap out the agent for their own.
+
+**Gas:** when a client pays over x402, Celo's facilitator relays the settlement and pays its gas; the payer only signs. ORYN's own `distribute()` and release calls are paid by ORYN's agent wallet. Owners pay gas for their own vault setup, link and withdraw transactions.
+
+## Run it
+
+Requirements: Node 20+, a Celo mainnet wallet with a little CELO for the agent.
+
+```bash
+npm install
+cp .env.example .env    # fill in AGENT_PRIVATE_KEY, X402_API_KEY, X402_SELLER_PAYOUT_ADDRESS
+npm test                # 19 contract tests: splits, FX guards, pay links, clones, access control
+npx hardhat compile
+npx tsx scripts/deployV2.ts --dry-run   # estimate gas; drop --dry-run to deploy (tagged)
+# put the printed factory address in ORYN_V2_FACTORY (.env) and in web/assets/oryn-v2.js
+npm run agent:forever   # agent (v1 + v2 watchers) and x402-service under one supervisor
+```
+
+Frontend: `web/` is static HTML (Vercel, clean URLs). Locally: `python -m http.server 5173 --directory web`, then open `/vault.html`. Set `ORYN_API` in `web/assets/oryn-v2.js` to the x402-service's public URL to enable gasless payments on the pay page.
+
+Without secrets, everything still starts in read-only form: the pages read the chain directly, and `npm test` needs no keys.
 
 ## Project layout
 
 ```
 contracts/
-  OrynVault.sol          — per-user treasury: rules, deposit, distribute, withdraw
-  OrynVaultFactory.sol   — deploys one vault per owner
-  mocks/MockERC20.sol    — test-only stand-in for cUSD
+  OrynVaultV2.sol         multi-currency, balance-based vault: split, FX legs, pay links, withdraw
+  OrynVaultFactoryV2.sol  one EIP-1167 clone per owner (about 435k gas to create)
+  OrynVault*.sol          v1 cUSD vaults (still live)
 agent/src/
-  watcher.ts             — polls Celo mainnet for new vaults + deposits
-  executor.ts            — triggers distribute(), tagged, then pays x402 for categorization
-  lib/attribution.ts     — the single funnel every outgoing tx passes through
-  lib/celoClient.ts       — viem clients for the agent wallet
+  watcherV2.ts            v2 loop: multicall pending balances, distribute, release stuck FX legs
+  watcher.ts / executor.ts  v1 loop
+  lib/attribution.ts      the single tagged-transaction funnel
+  lib/tokens.ts           the accepted currencies, their EIP-712 domains, and dust floors
 x402-service/
-  server.ts               — the paid categorization endpoint (x402 v2, Celo facilitator)
-  client.ts                — the agent's x402 payment client
-scripts/deploy.ts          — deploys OrynVaultFactory
-test/OrynVault.test.ts     — vault split logic + access-control guarantees
+  pay.ts                  pay links as x402 resources (GET details, POST to pay)
+  server.ts               x402 resource server on the Celo facilitator
+web/
+  vault.html              create a vault, pay links (copy, QR, share), split, activity, withdraw
+  pay.html                public pay page: gasless x402 or plain transfer
+  assets/oryn-v2.js       shared chain reads, wallet, tagged send, x402 signer
 ```
 
-## Running it
+## Design
 
-```bash
-npm install
-cp .env.example .env   # fill in AGENT_PRIVATE_KEY etc.
-npm test                # contract tests
-npm run deploy:mainnet  # deploy OrynVaultFactory (already done — see address above)
-npm run x402:serve      # start the paid categorization service
-npm run agent           # start the watcher/executor loop
-```
-
-## Tracks
-
-- **Most Revenue Generated** — every deposit + distribution is a real, tagged cUSD
-  transaction on Celo mainnet.
-- **Most x402 Payments** — every distribution triggers a real USDC x402 settlement to
-  ORYN's own categorization service via the Celo facilitator (`api.x402.celo.org`).
+The interface follows the [Celo brand kit](https://celo.org/brand-kit): Gypsum surfaces with Onyx type, Prosperity Yellow calls to action, Forest bands, and accent colors used only as tags. The display face is Fraunces Light, standing in for GT Alpina Thin, which needs a licence. ORYN keeps its own logo.

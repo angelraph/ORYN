@@ -1,4 +1,5 @@
 import { runWatcher } from "./watcher.js";
+import { runWatcherV2 } from "./watcherV2.js";
 import { startRetryLoop } from "./lib/x402RetryQueue.js";
 import { errMsg } from "./lib/errors.js";
 
@@ -18,5 +19,10 @@ startRetryLoop();
 
 runWatcher().catch((err) => {
   console.error(`[agent] fatal error: ${errMsg(err)}`);
+  process.exit(1);
+});
+
+runWatcherV2().catch((err) => {
+  console.error(`[agent] fatal error in v2 watcher: ${errMsg(err)}`);
   process.exit(1);
 });

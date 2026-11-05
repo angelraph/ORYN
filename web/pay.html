@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: Pay</title>
+<meta name="description" content="Pay an ORYN pay link on Celo. Gasless over x402, straight into the recipient's own vault." />
+<meta property="og:title" content="Pay with ORYN" />
+<meta property="og:description" content="Gasless stablecoin payment on Celo, split onchain the moment it lands." />
+<meta property="og:image" content="https://oryn.click/assets/oryn-og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/v2.css" />
+<style>
+  body { background: var(--c-forest); min-height: 100vh; }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(16px, 4vw, 32px); max-width: 560px; margin: 0 auto; }
+  .top img { height: 28px; display: block; }
+  .top a.small { color: rgba(255,255,255,0.75); font-size: 13px; text-decoration: none; }
+  .card { max-width: 520px; margin: 8px auto 40px; background: var(--c-gypsum); border-radius: 28px; overflow: hidden; box-shadow: 0 40px 80px -40px rgba(0,0,0,.5); }
+  @media (max-width: 552px) { .card { margin: 8px 16px 32px; } }
+  .hero { padding: 28px 26px 22px; background: var(--c-yellow); color: var(--c-onyx); }
+  .hero .eyebrow { opacity: .7; }
+  .hero .big { font-family: var(--font-display); font-weight: 300; font-size: clamp(46px, 12vw, 64px); letter-spacing: -0.03em; line-height: 1; margin: 12px 0 6px; word-break: break-all; }
+  .hero .memo { font-size: 16px; }
+  .body { padding: 22px 26px 26px; }
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .kv span:first-child { color: var(--c-wood); }
+  .split { margin: 14px 0 4px; }
+  details.agent { margin-top: 18px; font-size: 13.5px; }
+  details.agent summary { cursor: pointer; font-weight: 600; }
+  details.agent pre { background: var(--c-onyx); color: var(--c-snow); padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  .done { text-align: center; padding: 8px 0 4px; }
+  .done .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--c-jade); display: grid; place-items: center; margin: 0 auto 12px; font-size: 30px; }
+  .foot { text-align: center; color: rgba(255,255,255,.7); font-size: 12.5px; padding-bottom: 40px; }
+  .foot a { color: var(--c-yellow); }
+</style>
+</head>
+<body data-page="pay">
+<div class="top">
+  <a href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" /></a>
+  <a class="small" href="/vault">Get your own pay links →</a>
+</div>
+
+<div class="card" id="card"><div class="body empty"><span class="spin"></span>Loading this pay link…</div></div>
+<div class="foot">Settles on Celo mainnet · non-custodial · <a href="/docs">how ORYN works</a></div>
+
+<script type="module">
+import * as O from "/assets/oryn-v2.js";
+
+const $ = (s, el = document) => el.querySelector(s);
+const card = $("#card");
+const q = new URLSearchParams(location.search);
+const vaultParam = q.get("v") || "";
+const idParam = q.get("l") || "";
+let link = null;
+
+function fail(msg) { card.innerHTML = `<div class="body"><h2>This link can't be paid</h2><p class="sub">${O.escapeHtml(msg)}</p><a class="btn ghost" href="/">Back to ORYN</a></div>`; }
+function note(kind, html) { const n = $("#payNote"); n.className = "note " + kind; n.innerHTML = kind === "wait" ? `<span class="spin"></span>${html}` : html; }
+
+async function readLink() {
+  if (!O.isAddress(vaultParam) || !/^\d{1,9}$/.test(idParam)) throw new Error("The link is incomplete. Ask whoever sent it for a fresh one.");
+  const vault = O.getAddress(vaultParam);
+  const id = BigInt(idParam);
+  let factory;
+  try { factory = await O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "factory" }); }
+  catch { throw new Error("That address isn't an ORYN vault."); }
+  if (O.v2Live() && O.getAddress(factory) !== O.getAddress(O.ORYN_V2_FACTORY)) throw new Error("That address isn't an ORYN vault.");
+  const count = await O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "linkCount" });
+  if (id >= count) throw new Error("This pay link doesn't exist.");
+  const [raw, owner, legs, savingsBps] = await Promise.all([
+    O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "getLink", args: [id] }),
+    O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "owner" }),
+    O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "getLegs" }),
+    O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "savingsBps" }),
+  ]);
+  if (!raw.active) throw new Error("The owner has turned this pay link off.");
+  return { vault, id, owner, legs, savingsBps: Number(savingsBps), ...raw, t: O.tokenInfo(raw.token) };
+}
+
+function render() {
+  const { t } = link;
+  const legsHtml = link.legs.map((l) => `<span class="tag">${O.short(l.recipient)} · ${l.bps / 100}%</span>`).join(" ")
+    + (link.savingsBps ? ` <span class="tag yellow">saved · ${link.savingsBps / 100}%</span>` : "")
+    + ` <span class="tag off">rest to owner</span>`;
+  card.innerHTML = `
+    <div class="hero">
+      <div class="eyebrow">${O.PERIODS[link.period] || "Recurring"} payment · ${t.flag} ${t.currency}</div>
+      <div class="big">${O.fmt(link.amount, t.decimals)} <span style="font-size:.5em">${t.symbol}</span></div>
+      <div class="memo">${O.escapeHtml(link.memo || "Payment")}</div>
+    </div>
+    <div class="body" id="payBody">
+      <div class="kv"><span>Paid to</span><span class="mono">${O.short(link.owner)}'s vault <a href="https://celoscan.io/address/${link.vault}" target="_blank" rel="noopener">↗</a></span></div>
+      <div class="kv"><span>Network fee</span><span>${O.ORYN_API ? "None, it's gasless" : "A little CELO"}</span></div>
+      <div class="split"><div class="eyebrow" style="color:var(--c-wood);margin-bottom:8px">Split onchain on arrival</div>${legsHtml}</div>
+      <div style="margin-top:20px" id="actions"><button class="btn primary block" type="button" id="connect">Connect wallet to pay</button></div>
+      <div class="note" id="payNote"></div>
+      ${O.ORYN_API ? `<details class="agent"><summary>Paying from an agent?</summary><p>This link is a standard x402 resource. Any x402 client pays it, the same way:</p><pre>POST ${O.ORYN_API}/pay/${link.vault}/${link.id}</pre></details>` : ""}
+    </div>`;
+  $("#connect").onclick = connectAndPrepare;
+}
+
+async function connectAndPrepare() {
+  try {
+    await O.connect();
+  } catch (err) { return note("err", O.escapeHtml(O.cleanError(err))); }
+  const { t } = link;
+  const bal = await O.publicClient.readContract({ address: link.token, abi: O.erc20Abi, functionName: "balanceOf", args: [O.account] });
+  const enough = bal >= link.amount;
+  $("#actions").innerHTML = `
+    <div class="kv"><span>Paying from</span><span class="mono">${O.short(O.account)}</span></div>
+    <div class="kv"><span>Your ${t.symbol}</span><span>${O.fmt(bal, t.decimals)}</span></div>
+    <div style="margin-top:16px;display:grid;gap:10px">
+      ${O.ORYN_API ? `<button class="btn primary block" type="button" id="payX402" ${enough ? "" : "disabled"}>Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}, no gas</button>` : ""}
+      <button class="btn ${O.ORYN_API ? "ghost" : "primary"} block" type="button" id="payTransfer" ${enough ? "" : "disabled"}>${O.ORYN_API ? "Or pay with a regular transfer" : `Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}`}</button>
+    </div>`;
+  if (!enough) note("err", `You need ${O.fmt(link.amount, t.decimals)} ${t.symbol} and have ${O.fmt(bal, t.decimals)}. Top up this wallet, then reload.`);
+  const x = $("#payX402"); if (x) x.onclick = payX402;
+  $("#payTransfer").onclick = payTransfer;
+}
+
+async function payX402() {
+  const btn = $("#payX402"); btn.disabled = true;
+  try {
+    note("wait", "Preparing the payment…");
+    const [{ wrapFetchWithPaymentFromConfig }, { ExactEvmScheme }] = await Promise.all([
+      import("https://esm.sh/@x402/fetch@2.28.0"),
+      import("https://esm.sh/@x402/evm@2.28.0/exact/client"),
+    ]);
+    const payFetch = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: "eip155:42220", client: new ExactEvmScheme(O.x402Signer()) }] });
+    note("wait", "Sign the payment in your wallet. It's a signature, not a transaction: you pay no gas.");
+    const res = await payFetch(`${O.ORYN_API}/pay/${link.vault}/${link.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const header = res.headers.get("payment-response") || res.headers.get("x-payment-response");
+    let settle = null;
+    try { settle = header ? JSON.parse(atob(header)) : null; } catch {}
+    if (!res.ok || (settle && settle.success === false)) {
+      throw new Error((settle && (settle.errorReason || settle.error)) || `The payment didn't go through (HTTP ${res.status}). Nothing was taken.`);
+    }
+    done(settle && settle.transaction);
+  } catch (err) {
+    note("err", O.escapeHtml(O.cleanError(err)));
+    btn.disabled = false;
+  }
+}
+
+async function payTransfer() {
+  const btn = $("#payTransfer"); btn.disabled = true;
+  try {
+    note("wait", "Confirm the transfer in your wallet…");
+    const { hash } = await O.send({ to: link.token, abi: O.erc20Abi, functionName: "transfer", args: [link.vault, link.amount] });
+    done(hash);
+  } catch (err) {
+    note("err", O.escapeHtml(O.cleanError(err)));
+    btn.disabled = false;
+  }
+}
+
+function done(tx) {
+  const { t } = link;
+  $("#payBody").innerHTML = `<div class="done">
+    <div class="tick">✓</div>
+    <h2>Paid</h2>
+    <p class="sub" style="margin:6px auto 16px">${O.fmt(link.amount, t.decimals)} ${t.symbol} landed in the vault. ORYN's agent splits it within about 15 seconds.</p>
+    ${tx ? `<a class="btn ghost" href="https://celoscan.io/tx/${tx}" target="_blank" rel="noopener">View on Celoscan ↗</a>` : ""}
+    <p style="margin-top:18px"><a href="/vault">Get paid like this yourself →</a></p>
+  </div>`;
+}
+
+try { link = await readLink(); render(); } catch (err) { fail(O.cleanError(err)); }
+</script>
+</body>
+</html>

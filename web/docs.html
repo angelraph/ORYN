@@ -17,25 +17,25 @@
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   /* Same system as index.html and app.html. Docs lean on Mollie's editorial reading
      rhythm: white canvas, mono labels, oat callouts, generous line length limits. */
   :root {
-    --forest: #163300;
-    --forest-2: #1d4200;
+    --forest: #476520;
+    --forest-2: #3f5a1c;
     --volt: #FCFF52;
-    --mint: #16e2bb;
+    --mint: #56DF7C;
     --paper: #ffffff;
-    --oat: #f7f4f1;
-    --fog: #e8ebe6;
-    --obsidian: #0e0f0c;
-    --charcoal: #454745;
-    --slate: #6a6c6a;
-    --linen: #e2f6d5;
-    --pending: #8b6900;
-    --pending-bg: #fdf8d9;
-    --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+    --oat: #FCF6F1;
+    --fog: #E7E3D4;
+    --obsidian: #000000;
+    --charcoal: #2b2620;
+    --slate: #655947;
+    --linen: #EAF0DA;
+    --pending: #6b5a00;
+    --pending-bg: #FFFBC7;
+    --font-display: "Fraunces", "GT Alpina", Georgia, serif;
     --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -55,11 +55,11 @@
 
   .intro { background: var(--forest); color: var(--paper); padding: 64px 0 72px; position: relative; overflow: hidden; }
   .intro::after {
-    content: "DOCS"; position: absolute; right: -0.05em; bottom: -0.3em; font-family: var(--font-display); font-weight: 900;
+    content: "DOCS"; position: absolute; right: -0.05em; bottom: -0.3em; font-family: var(--font-display); font-weight: 300;
     font-size: clamp(140px, 22vw, 320px); letter-spacing: -0.06em; line-height: 1; color: var(--forest-2); pointer-events: none;
   }
   .intro .mono { color: rgba(255,255,255,0.6); }
-  .intro h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(44px, 7vw, 84px); line-height: 0.9; letter-spacing: -0.045em; margin: 14px 0 18px; position: relative; z-index: 1; }
+  .intro h1 { font-family: var(--font-display); font-weight: 300; font-size: clamp(44px, 7vw, 84px); line-height: 0.9; letter-spacing: -0.025em; margin: 14px 0 18px; position: relative; z-index: 1; }
   .intro h1 span { color: var(--volt); }
   .intro p { max-width: 560px; color: rgba(255,255,255,0.78); margin: 0; font-size: 17px; position: relative; z-index: 1; }
 
@@ -83,7 +83,7 @@
   article section { padding-bottom: 56px; margin-bottom: 56px; border-bottom: 1px solid var(--fog); }
   article section:last-child { border-bottom: none; }
   article .mono.kicker { color: var(--slate); display: block; margin-bottom: 8px; }
-  h2 { font-family: var(--font-display); font-weight: 900; color: var(--obsidian); font-size: clamp(30px, 4vw, 42px); letter-spacing: -0.04em; line-height: 1; margin: 0 0 20px; }
+  h2 { font-family: var(--font-display); font-weight: 300; color: var(--obsidian); font-size: clamp(30px, 4vw, 42px); letter-spacing: -0.025em; line-height: 1; margin: 0 0 20px; }
   h3 { font-family: var(--font-ui); font-weight: 700; color: var(--obsidian); font-size: 18px; letter-spacing: -0.02em; margin: 32px 0 8px; }
   p { margin: 0 0 16px; }
   strong { color: var(--obsidian); font-weight: 600; }
@@ -146,7 +146,8 @@
     <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
     <nav class="nav-links" aria-label="Main">
       <a href="/" data-nav="home">Home</a>
-      <a href="/app" data-nav="app">App</a>
+      <a href="/vault" data-nav="vault">Vault</a>
+      <a href="/app" data-nav="app">Classic</a>
       <a href="/docs" data-nav="docs">Docs</a>
       <a href="/#how">How it works</a>
       <a href="/#faq">FAQ</a>
@@ -154,20 +155,21 @@
     </nav>
     <div class="nav-right">
       <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-      <a class="nav-cta" href="/app">Open app</a>
+      <a class="nav-cta" href="/vault">Open vault</a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
     </div>
   </div>
 </header>
 <div class="nav-sheet" id="navSheet" hidden>
   <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
-  <a class="big" href="/app" data-nav="app">App <small>Pay · Rules · Withdraw</small></a>
+  <a class="big" href="/vault" data-nav="vault">Vault <small>Pay links · Split · Withdraw</small></a>
+  <a class="big" href="/app" data-nav="app">Classic <small>cUSD vaults (v1)</small></a>
   <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
   <a class="big" href="/#faq">FAQ <small>Quick answers</small></a>
   <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
   <div class="sheet-foot">
     <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-    <a class="nav-cta" href="/app">Open the app</a>
+    <a class="nav-cta" href="/vault">Open your vault</a>
   </div>
 </div>
 

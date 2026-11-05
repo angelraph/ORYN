@@ -16,35 +16,35 @@
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-  /* Same system as index.html: Forest Ink + Celo yellow voltage, Inter Tight display,
+  /* Same system as index.html: Forest Ink + Celo yellow voltage, Fraunces display (GT Alpina stand-in),
      Inter UI, IBM Plex Mono labels, Oat surfaces, pill controls. */
   :root {
-    --forest: #163300;
-    --forest-2: #1d4200;
+    --forest: #476520;
+    --forest-2: #3f5a1c;
     --volt: #FCFF52;
     --paper: #ffffff;
-    --oat: #f7f4f1;
-    --fog: #e8ebe6;
-    --obsidian: #0e0f0c;
-    --charcoal: #454745;
-    --slate: #6a6c6a;
-    --pebble: #868685;
-    --linen: #e2f6d5;
+    --oat: #FCF6F1;
+    --fog: #E7E3D4;
+    --obsidian: #000000;
+    --charcoal: #2b2620;
+    --slate: #655947;
+    --pebble: #8a7d69;
+    --linen: #EAF0DA;
 
     /* semantic (names kept from the previous theme so the script's markup still maps) */
     --text: var(--obsidian);
     --muted: var(--slate);
     --border: var(--fog);
-    --ok: #1e681d;
-    --ok-bg: #e2f6d5;
-    --err: #99001c;
-    --err-bg: #fbecec;
-    --pending: #8b6900;
-    --pending-bg: #fdf8d9;
+    --ok: #237a2b;
+    --ok-bg: #E3F3E4;
+    --err: #B8001F;
+    --err-bg: #FDE6EB;
+    --pending: #6b5a00;
+    --pending-bg: #FFFBC7;
 
-    --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+    --font-display: "Fraunces", "GT Alpina", Georgia, serif;
     --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -62,7 +62,7 @@
   /* ---- Header + forest band ---- */
   .band { background: var(--forest); color: var(--paper); padding-bottom: 120px; position: relative; overflow: hidden; }
   .band::after {
-    content: "ORYN"; position: absolute; right: -0.08em; bottom: -0.28em; font-family: var(--font-display); font-weight: 900;
+    content: "ORYN"; position: absolute; right: -0.08em; bottom: -0.28em; font-family: var(--font-display); font-weight: 300;
     font-size: clamp(160px, 26vw, 360px); letter-spacing: -0.06em; line-height: 1; color: var(--forest-2); pointer-events: none;
   }
   .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--volt); animation: pulse 1.6s infinite; }
@@ -72,7 +72,7 @@
   .page-head .mono { color: rgba(255,255,255,0.6); }
   @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
   h1 {
-    font-family: var(--font-display); font-weight: 900; color: var(--paper);
+    font-family: var(--font-display); font-weight: 300; color: var(--paper);
     font-size: clamp(42px, 7vw, 76px); line-height: 0.9; letter-spacing: -0.045em; margin: 14px 0 16px;
     animation: rise 0.9s var(--ease) 0.1s both;
   }
@@ -88,7 +88,7 @@
   }
   .btn:hover:not(:disabled) { transform: translateY(-1px); }
   @media (min-width: 480px) { .btn:not(.block) { width: auto; } }
-  .btn.primary { background: var(--volt); color: var(--forest); }
+  .btn.primary { background: var(--volt); color: #000000; }
   .btn.secondary { background: transparent; color: var(--forest); border-color: var(--forest); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn.small { padding: 7px 16px; font-size: 13.5px; min-height: 36px; }
@@ -98,7 +98,7 @@
   /* ---- App shell: the one elevated surface on the page ---- */
   .app-shell {
     background: var(--paper); border-radius: 28px; margin-top: -84px; position: relative; z-index: 2;
-    box-shadow: 0 24px 48px rgba(22,51,0,0.10); overflow: hidden; animation: rise 0.9s var(--ease) 0.3s both;
+    box-shadow: 0 24px 48px rgba(71, 101, 32,0.10); overflow: hidden; animation: rise 0.9s var(--ease) 0.3s both;
   }
   .tab-bar-wrap { position: relative; padding: 14px 14px 0; }
   .tab-bar-wrap::after {
@@ -141,7 +141,7 @@
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .field input:focus, .field textarea:focus, .addr-book-row input:focus, table.rules-table td input:focus {
-    outline: none; border-color: var(--forest); box-shadow: 0 0 0 3px rgba(22,51,0,0.08);
+    outline: none; border-color: var(--forest); box-shadow: 0 0 0 3px rgba(71, 101, 32,0.08);
   }
   .field textarea { min-height: 84px; resize: vertical; }
   .field-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -180,7 +180,7 @@
   .warn-box .btn { margin-top: 10px; }
   .balance-box { display: grid; gap: 10px; background: var(--oat); border-radius: 16px; padding: 16px 18px; margin-top: 12px; font-size: 12px; color: var(--slate); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
   @media (min-width: 560px) { #depBalanceBox { grid-template-columns: 1fr 1fr; } }
-  .balance-box strong { font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -0.03em; color: var(--forest); display: block; margin-top: 4px; text-transform: none; }
+  .balance-box strong { font-family: var(--font-display); font-weight: 300; font-size: 26px; letter-spacing: -0.03em; color: var(--forest); display: block; margin-top: 4px; text-transform: none; }
   table.rules-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 16px; }
   table.rules-table th { font-family: var(--font-mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); }
   table.rules-table th, table.rules-table td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--fog); }
@@ -216,7 +216,8 @@
     <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
     <nav class="nav-links" aria-label="Main">
       <a href="/" data-nav="home">Home</a>
-      <a href="/app" data-nav="app">App</a>
+      <a href="/vault" data-nav="vault">Vault</a>
+      <a href="/app" data-nav="app">Classic</a>
       <a href="/docs" data-nav="docs">Docs</a>
       <a href="/#how">How it works</a>
       <a href="/#faq">FAQ</a>
@@ -224,20 +225,21 @@
     </nav>
     <div class="nav-right">
       <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-      <a class="nav-cta" href="/app">Open app</a>
+      <a class="nav-cta" href="/vault">Open vault</a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
     </div>
   </div>
 </header>
 <div class="nav-sheet" id="navSheet" hidden>
   <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
-  <a class="big" href="/app" data-nav="app">App <small>Pay · Rules · Withdraw</small></a>
+  <a class="big" href="/vault" data-nav="vault">Vault <small>Pay links · Split · Withdraw</small></a>
+  <a class="big" href="/app" data-nav="app">Classic <small>cUSD vaults (v1)</small></a>
   <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
   <a class="big" href="/#faq">FAQ <small>Quick answers</small></a>
   <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
   <div class="sheet-foot">
     <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
-    <a class="nav-cta" href="/app">Open the app</a>
+    <a class="nav-cta" href="/vault">Open your vault</a>
   </div>
 </div>
 
@@ -247,6 +249,7 @@
     <div class="mono">ORYN app · Celo mainnet</div>
     <h1>Pay in. <span>Split out.</span></h1>
     <p class="lead">Deposit, set your rules, withdraw, or fund the agent. Nothing leaves your wallet until you approve it yourself.</p>
+    <p class="lead" style="margin-top:14px"><a href="/vault" style="color:var(--volt);font-weight:600">New: v2 vaults with gasless x402 pay links in USA₮, USDC, wARS, wBRL and wCOP →</a></p>
   </div>
 </div>
 

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: Vault</title>
+<meta name="description" content="Get paid in USA₮, USDC, wARS, wBRL or wCOP through x402 pay links. ORYN splits every payment onchain on Celo, without ever holding your money." />
+<link rel="canonical" href="https://oryn.click/vault" />
+<meta property="og:title" content="ORYN Vault" />
+<meta property="og:description" content="Pay links that settle gasless over x402 and split themselves onchain on Celo." />
+<meta property="og:image" content="https://oryn.click/assets/oryn-og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/v2.css" />
+<link rel="stylesheet" href="/assets/site.css" />
+<script src="/assets/nav.js" defer></script>
+</head>
+<body data-page="vault">
+
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/" data-nav="home">Home</a>
+      <a href="/vault" data-nav="vault">Vault</a>
+      <a href="/app" data-nav="app">Classic</a>
+      <a href="/docs" data-nav="docs">Docs</a>
+      <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub<span class="ext">&nbsp;↗</span></a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="nav-sheet" id="navSheet" hidden>
+  <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
+  <a class="big" href="/vault" data-nav="vault">Vault <small>Pay links · Split · Withdraw</small></a>
+  <a class="big" href="/app" data-nav="app">Classic <small>cUSD vaults (v1)</small></a>
+  <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
+  <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
+</div>
+
+<div class="band">
+  <svg class="cube" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#FCFF52" stroke-width="0.6"><path d="M50 8 88 30v40L50 92 12 70V30z"/><path d="M50 8v84M12 30l76 40M88 30 12 70"/></g></svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span>ORYN v2 · Celo mainnet</div>
+    <h1>Get paid in any currency. <em>Split it on arrival.</em></h1>
+    <p>Share a pay link. Your client pays in USA₮, USDC, wARS, wBRL or wCOP over x402 with no gas, straight into your own vault, and ORYN's agent splits it the way you decided. ORYN can never withdraw your money.</p>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="shell">
+    <div class="shell-head">
+      <span class="who" id="who">Not connected</span>
+      <button class="btn small primary" id="connectBtn" type="button">Connect wallet</button>
+    </div>
+    <div id="view"><div class="section empty"><span class="spin"></span>Loading…</div></div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="/assets/oryn-logo-light.png" alt="ORYN" width="98" height="32" />
+        <p>Autonomous treasury agent on Celo. Every payment you receive is split onchain, automatically, without ORYN ever holding your money.</p>
+        <div class="foot-tag">Pay<i>/</i>Split<i>/</i>Grow</div>
+      </div>
+      <div class="foot-col"><h4>Product</h4><a href="/vault">Vault</a><a href="/app">Classic app</a><a href="/docs">Docs</a></div>
+      <div class="foot-col"><h4>Verify</h4><a id="factoryLink" href="https://celoscan.io/address/0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26" target="_blank" rel="noopener">Agent wallet ↗</a><a href="https://8004scan.io/agents/celo/9688" target="_blank" rel="noopener">Agent identity ↗</a><a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">Source ↗</a></div>
+      <div class="foot-col"><h4>Rails</h4><a href="https://x402.celo.org" target="_blank" rel="noopener">x402 on Celo ↗</a><a href="https://celoscan.io" target="_blank" rel="noopener">Celoscan ↗</a></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 ORYN · oryn.click</span><span>Built for Celo Agents on Open Rails · <code>celo_4781ba9a079a</code></span></div>
+  </div>
+</footer>
+
+<script type="module">
+import * as O from "/assets/oryn-v2.js";
+
+const $ = (s, el = document) => el.querySelector(s);
+const view = $("#view");
+const who = $("#who");
+const connectBtn = $("#connectBtn");
+const ZERO = "0x0000000000000000000000000000000000000000";
+const LEG_COLORS = ["#476520", "#7CC0FF", "#FF9A51", "#B490FF", "#FFA3EB", "#56DF7C", "#655947", "#1E002B", "#E7E3D4", "#329F3B"];
+let state = null;
+
+if (O.v2Live()) $("#factoryLink").outerHTML = `<a href="https://celoscan.io/address/${O.ORYN_V2_FACTORY}" target="_blank" rel="noopener">Vault factory v2 ↗</a><a href="https://celoscan.io/address/${O.AGENT_ADDRESS}" target="_blank" rel="noopener">Agent wallet ↗</a>`;
+
+function note(el, kind, html) { el.className = "note " + kind; el.innerHTML = kind === "wait" ? `<span class="spin"></span>${html}` : html; }
+function txLink(hash) { return `<a href="https://celoscan.io/tx/${hash}" target="_blank" rel="noopener">View on Celoscan ↗</a>`; }
+
+async function run(el, pendingMsg, fn, okMsg) {
+  try {
+    note(el, "wait", pendingMsg);
+    const { hash } = await fn();
+    note(el, "ok", `${okMsg} ${txLink(hash)}`);
+    return true;
+  } catch (err) {
+    note(el, "err", O.escapeHtml(O.cleanError(err)) + (err.hash ? " " + txLink(err.hash) : ""));
+    return false;
+  }
+}
+
+// ------------------------------------------------------------ split builder (create + edit)
+function splitBuilder(root, initial) {
+  root.innerHTML = `
+    <div class="legs"></div>
+    <button class="btn small ghost" type="button" data-add>+ Add a recipient</button>
+    <div class="grid2" style="margin-top:6px">
+      <label class="f"><span>Saved for you (%)</span><input type="number" min="0" max="100" step="0.5" data-save value="${initial.savings}" /></label>
+    </div>
+    <div class="splitbar" data-bar></div>
+    <div class="legend" data-legend></div>`;
+  const legsEl = $(".legs", root);
+  function addLeg(addr = "", pct = "") {
+    const row = document.createElement("div");
+    row.className = "leg";
+    row.innerHTML = `<input placeholder="Recipient 0x… address" value="${O.escapeHtml(addr)}" data-addr /><input class="pct" type="number" min="0" max="100" step="0.5" placeholder="%" value="${pct}" data-pct /><button class="x" type="button" aria-label="Remove">×</button>`;
+    $(".x", row).onclick = () => { row.remove(); draw(); };
+    row.querySelectorAll("input").forEach((i) => (i.oninput = draw));
+    legsEl.appendChild(row);
+  }
+  function read() {
+    const legs = [...legsEl.querySelectorAll(".leg")].map((r) => ({ addr: $("[data-addr]", r).value.trim(), pct: parseFloat($("[data-pct]", r).value) || 0 }));
+    const savings = parseFloat($("[data-save]", root).value) || 0;
+    return { legs, savings };
+  }
+  function draw() {
+    const { legs, savings } = read();
+    const total = legs.reduce((s, l) => s + l.pct, 0) + savings;
+    const keep = Math.max(0, 100 - total);
+    const parts = legs.map((l, i) => ({ label: l.addr && O.isAddress(l.addr) ? O.short(l.addr) : `Recipient ${i + 1}`, pct: l.pct, color: LEG_COLORS[i % LEG_COLORS.length] }));
+    parts.push({ label: "Saved", pct: savings, color: "#FCFF52" }, { label: "Stays with you", pct: keep, color: "#E7E3D4" });
+    $("[data-bar]", root).innerHTML = parts.map((p) => `<i style="width:${Math.min(100, p.pct)}%;background:${p.color}"></i>`).join("");
+    $("[data-legend]", root).innerHTML = parts.filter((p) => p.pct > 0).map((p) => `<span><b style="background:${p.color}"></b>${O.escapeHtml(p.label)} · ${p.pct}%</span>`).join("")
+      + (total > 100 ? `<span style="color:var(--c-error)">Over 100% by ${total - 100}%</span>` : "");
+  }
+  (initial.legs.length ? initial.legs : [{ addr: "", pct: "" }]).forEach((l) => addLeg(l.addr, l.pct));
+  $("[data-add]", root).onclick = () => { addLeg(); draw(); };
+  $("[data-save]", root).oninput = draw;
+  draw();
+  return {
+    /** Validated policy args for createVault / setPolicy, or throws a readable error. */
+    policy() {
+      const { legs, savings } = read();
+      const filled = legs.filter((l) => l.addr || l.pct);
+      for (const l of filled) {
+        if (!O.isAddress(l.addr)) throw new Error(`"${l.addr || "(empty)"}" isn't a valid 0x address.`);
+        if (!(l.pct > 0)) throw new Error(`Give ${O.short(l.addr)} a percentage above 0.`);
+        if (state && l.addr.toLowerCase() === (state.vault || "").toLowerCase()) throw new Error("A recipient can't be the vault itself.");
+      }
+      const total = filled.reduce((s, l) => s + l.pct, 0) + savings;
+      if (total > 100) throw new Error(`The split adds up to ${total}%. Bring it to 100% or less.`);
+      if (filled.length === 0 && savings === 0) throw new Error("Add at least one recipient or a savings percentage, so payments are actually split.");
+      return [filled.map((l) => ({ recipient: O.getAddress(l.addr), bps: Math.round(l.pct * 100), payoutToken: ZERO })), Math.round(savings * 100), ZERO];
+    },
+  };
+}
+
+// ------------------------------------------------------------ views
+function renderNotLive() {
+  view.innerHTML = `<div class="section"><h2>v2 vaults are launching</h2><p class="sub">The ORYN v2 factory is being deployed to Celo mainnet. Until it's live you can still use <a href="/app">classic cUSD vaults</a>.</p></div>`;
+}
+
+function renderConnect() {
+  view.innerHTML = `<div class="section">
+    <h2>Connect to open your vault</h2>
+    <p class="sub">Works with MiniPay, Valora and MetaMask on Celo. Connecting only shares your address; every action asks you to confirm it in your wallet.</p>
+    <div class="grid2">
+      ${["Share a pay link|Pick a currency and amount. Anyone, or any agent, pays it over x402 without needing gas.",
+         "It lands in your vault|Your own contract on Celo. Only you can withdraw from it.",
+         "ORYN splits it|Within seconds of arrival: collaborators paid, savings set aside, the rest is yours."]
+        .map((s, i) => { const [t, d] = s.split("|"); return `<div class="bal"><span class="tag yellow">0${i + 1}</span><h3 style="margin-top:12px">${t}</h3><div class="meta">${d}</div></div>`; }).join("")}
+    </div>
+    <div style="margin-top:22px"><button class="btn primary" type="button" id="bigConnect">Connect wallet</button></div>
+  </div>`;
+  $("#bigConnect").onclick = doConnect;
+}
+
+function renderCreate() {
+  view.innerHTML = `<div class="section">
+    <h2>Create your vault</h2>
+    <p class="sub">Decide once how every payment is divided. You can change it any time, and only you can. Your vault accepts ${O.TOKENS.map((t) => t.symbol).join(", ")} from day one.</p>
+    <div id="builder"></div>
+    <div style="margin-top:20px"><button class="btn primary" type="button" id="createBtn">Create vault</button></div>
+    <div class="note" id="createNote"></div>
+    <p class="sub" style="font-size:13px;margin-top:18px">One transaction from your wallet (a small CELO gas fee). ORYN's agent gets permission to run your split and nothing else: it can't withdraw, change your split, or send money anywhere you didn't choose.</p>
+  </div>`;
+  const b = splitBuilder($("#builder"), { legs: [], savings: 20 });
+  $("#createBtn").onclick = async () => {
+    const el = $("#createNote");
+    let args;
+    try { args = b.policy(); } catch (e) { return note(el, "err", O.escapeHtml(e.message)); }
+    const ok = await run(el, "Creating your vault. Confirm in your wallet…",
+      () => O.send({ to: O.ORYN_V2_FACTORY, abi: O.factoryAbi, functionName: "createVault", args: [...args, [], []] }),
+      "Vault created.");
+    if (ok) setTimeout(load, 1500);
+  };
+}
+
+function renderDashboard(tab = "overview") {
+  const s = state;
+  const totalLinks = s.links.length;
+  view.innerHTML = `<div class="section">
+    <div class="row" style="justify-content:space-between;margin-bottom:18px">
+      <div><div class="eyebrow" style="color:var(--c-wood)">Your vault</div><div class="mono" style="margin-top:4px">${s.vault} <a href="https://celoscan.io/address/${s.vault}" target="_blank" rel="noopener">↗</a></div></div>
+      <button class="btn small primary" type="button" data-go="links">New pay link</button>
+    </div>
+    <div class="tabs" role="tablist">
+      ${[["overview", "Overview"], ["links", `Pay links${totalLinks ? " · " + totalLinks : ""}`], ["split", "Split"], ["activity", "Activity"], ["withdraw", "Withdraw"]]
+        .map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}
+    </div>
+    <div id="pane"></div>
+  </div>`;
+  view.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => renderDashboard(b.dataset.tab)));
+  $("[data-go]").onclick = () => renderDashboard("links");
+  ({ overview: paneOverview, links: paneLinks, split: paneSplit, activity: paneActivity, withdraw: paneWithdraw })[tab]($("#pane"));
+}
+
+function paneOverview(el) {
+  const s = state;
+  const visible = s.balances.filter((b) => b.held > 0n || b.pending > 0n || b.reserved > 0n);
+  const legsTxt = s.legs.map((l) => `<span class="tag">${O.short(l.recipient)} · ${l.bps / 100}%</span>`).join(" ");
+  el.innerHTML = `
+    <h3>Balances</h3>
+    ${visible.length ? `<div class="balances">${visible.map((b) => { const t = O.tokenInfo(b.token); return `
+      <div class="bal"><span class="tag ${t.tone}">${t.flag} ${t.symbol}</span>
+        <div class="amt">${O.fmt(b.held, t.decimals)}</div>
+        <div class="meta">yours to withdraw${b.pending > 0n ? ` · <b>${O.fmt(b.pending, t.decimals)}</b> arriving, splitting now` : ""}${b.reserved > 0n ? ` · ${O.fmt(b.reserved, t.decimals)} queued for FX` : ""}</div>
+      </div>`; }).join("")}</div>`
+      : `<div class="empty">No payments yet. <a href="#" data-go2="links">Create a pay link</a> and send it to a client.</div>`}
+    <h3 style="margin-top:26px">How each payment is split</h3>
+    <p class="sub" style="margin-bottom:8px">${legsTxt || "No recipients."} ${s.savingsBps ? `<span class="tag yellow">Saved · ${s.savingsBps / 100}%</span>` : ""} <span class="tag off">Rest stays with you</span></p>
+    <p class="sub" style="font-size:13px">ORYN's agent (<a href="https://celoscan.io/address/${O.AGENT_ADDRESS}" target="_blank" rel="noopener">${O.short(O.AGENT_ADDRESS)}</a>) checks every vault every 15 seconds and splits each currency as it arrives.</p>`;
+  const go = $("[data-go2]", el);
+  if (go) go.onclick = (e) => { e.preventDefault(); renderDashboard("links"); };
+}
+
+function paneLinks(el) {
+  const s = state;
+  el.innerHTML = `
+    <h3>New pay link</h3>
+    <div class="grid2">
+      <label class="f"><span>Currency</span><select id="lkToken">${O.TOKENS.map((t) => `<option value="${t.address}">${t.flag} ${t.symbol} · ${t.currency}</option>`).join("")}</select></label>
+      <label class="f"><span>Amount</span><input id="lkAmount" inputmode="decimal" placeholder="e.g. 25" /></label>
+      <label class="f"><span>What it's for</span><input id="lkMemo" maxlength="80" placeholder="e.g. Logo design, invoice #12" /></label>
+      <label class="f"><span>Repeats</span><select id="lkPeriod">${Object.entries(O.PERIODS).map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></label>
+    </div>
+    <button class="btn primary" type="button" id="lkCreate">Create pay link</button>
+    <div class="note" id="lkNote"></div>
+    <h3 style="margin-top:28px">Your links</h3>
+    <div class="links" id="lkList">${s.links.length ? "" : `<div class="empty">No pay links yet.</div>`}</div>`;
+  const list = $("#lkList", el);
+  [...s.links].reverse().forEach((l) => {
+    const t = O.tokenInfo(l.token);
+    const url = O.payUrl(s.vault, l.id);
+    const card = document.createElement("div");
+    card.className = "link";
+    card.innerHTML = `
+      <div class="link-top">
+        <div><div class="amt">${O.fmt(l.amount, t.decimals)} ${t.symbol}</div><div class="sub" style="margin:2px 0 0">${O.escapeHtml(l.memo || "Payment")} · ${O.PERIODS[l.period] || `every ${l.period}s`}</div></div>
+        <span class="tag ${l.active ? t.tone : "off"}">${l.active ? "Active" : "Turned off"}</span>
+      </div>
+      <div class="url">${url}</div>
+      <div class="row">
+        <button class="btn small dark" type="button" data-copy>Copy link</button>
+        <button class="btn small ghost" type="button" data-qr>QR code</button>
+        ${navigator.share ? `<button class="btn small ghost" type="button" data-share>Share</button>` : ""}
+        <a class="btn small ghost" href="${url}" target="_blank" rel="noopener">Open</a>
+        <button class="btn small ghost" type="button" data-toggle>${l.active ? "Turn off" : "Turn on"}</button>
+      </div>
+      <div class="qr"></div>
+      <div class="note"></div>`;
+    $("[data-copy]", card).onclick = async (e) => { await navigator.clipboard.writeText(url); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy link"), 1400); };
+    $("[data-qr]", card).onclick = async () => {
+      const box = $(".qr", card);
+      if (!box.innerHTML) {
+        const QR = (await import("https://esm.sh/qrcode@1.5.4")).default;
+        box.innerHTML = `<img alt="QR code for this pay link" src="${await QR.toDataURL(url, { margin: 1, width: 336, color: { dark: "#000000", light: "#FFFFFF" } })}" />`;
+      }
+      box.classList.toggle("on");
+    };
+    const sh = $("[data-share]", card);
+    if (sh) sh.onclick = () => navigator.share({ title: "Pay with ORYN", text: `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}`, url }).catch(() => {});
+    $("[data-toggle]", card).onclick = async () => {
+      const ok = await run($(".note", card), "Updating link. Confirm in your wallet…",
+        () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "setLinkActive", args: [BigInt(l.id), !l.active] }), "Updated.");
+      if (ok) { await load(false); renderDashboard("links"); }
+    };
+    list.appendChild(card);
+  });
+  $("#lkCreate", el).onclick = async () => {
+    const n = $("#lkNote", el);
+    const token = $("#lkToken", el).value;
+    const t = O.tokenInfo(token);
+    let amount;
+    try { amount = O.parseUnits($("#lkAmount", el).value.trim().replace(",", "."), t.decimals); } catch { return note(n, "err", "Enter an amount, like 25 or 12.50."); }
+    if (amount <= 0n) return note(n, "err", "The amount must be above zero.");
+    const ok = await run(n, "Publishing your pay link onchain. Confirm in your wallet…",
+      () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "createLink", args: [token, amount, Number($("#lkPeriod", el).value), $("#lkMemo", el).value.trim()] }),
+      "Pay link created.");
+    if (ok) { await load(false); renderDashboard("links"); }
+  };
+}
+
+function paneSplit(el) {
+  const s = state;
+  el.innerHTML = `<h3>Change your split</h3><p class="sub">Applies to every payment from now on. Payments already split stay where they went.</p><div id="builder"></div>
+    <div style="margin-top:18px"><button class="btn primary" type="button" id="saveSplit">Save split</button></div><div class="note" id="splitNote"></div>`;
+  const b = splitBuilder($("#builder", el), { legs: s.legs.map((l) => ({ addr: l.recipient, pct: l.bps / 100 })), savings: s.savingsBps / 100 });
+  $("#saveSplit", el).onclick = async () => {
+    const n = $("#splitNote", el);
+    let args;
+    try { args = b.policy(); } catch (e) { return note(n, "err", O.escapeHtml(e.message)); }
+    if (await run(n, "Saving your split. Confirm in your wallet…", () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "setPolicy", args }), "Split saved.")) await load(false);
+  };
+}
+
+async function paneActivity(el) {
+  el.innerHTML = `<div class="empty"><span class="spin"></span>Reading the last few days from Celo…</div>`;
+  const logs = await O.recentActivity(state.vault);
+  if (!logs.length) { el.innerHTML = `<div class="empty">Nothing in the last few days yet.</div>`; return; }
+  el.innerHTML = `<ul class="feed">${logs.slice(0, 60).map((l) => {
+    const a = l.args;
+    const line = {
+      Split: () => `<span class="tag ${O.tokenInfo(a.token).tone}">Received</span> ${O.fmtToken(a.amount, a.token)} arrived and was split`,
+      Paid: () => `<span class="tag jade">Paid out</span> ${O.fmtToken(a.amount, a.token)} to <span class="mono">${O.short(a.recipient)}</span>`,
+      Withdrawn: () => `<span class="tag">Withdrawn</span> ${O.fmtToken(a.amount, a.token)} to <span class="mono">${O.short(a.to)}</span>`,
+      LinkCreated: () => `<span class="tag yellow">Link</span> Pay link #${a.id} for ${O.fmtToken(a.amount, a.token)}`,
+    }[l.eventName]();
+    return `<li>${line}<a class="when" href="https://celoscan.io/tx/${l.transactionHash}" target="_blank" rel="noopener">block ${l.blockNumber} ↗</a></li>`;
+  }).join("")}</ul>`;
+}
+
+function paneWithdraw(el) {
+  const s = state;
+  const opts = s.balances.map((b) => { const t = O.tokenInfo(b.token); return `<option value="${b.token}">${t.symbol} · ${O.fmt(b.held + b.pending, t.decimals)} available</option>`; }).join("");
+  el.innerHTML = `<h3>Withdraw</h3><p class="sub">Only you can do this. Money queued for other people's FX payouts is never touched.</p>
+    <div class="grid2">
+      <label class="f"><span>Currency</span><select id="wdToken">${opts}</select></label>
+      <label class="f"><span>Amount</span><input id="wdAmount" inputmode="decimal" placeholder="e.g. 10" /></label>
+    </div>
+    <label class="f"><span>Send to</span><input id="wdTo" value="${O.account}" /></label>
+    <div class="row"><button class="btn primary" type="button" id="wdBtn">Withdraw</button><button class="btn ghost" type="button" id="wdMax">Max</button></div>
+    <div class="note" id="wdNote"></div>`;
+  const bal = () => s.balances.find((b) => b.token === $("#wdToken", el).value);
+  $("#wdMax", el).onclick = () => { const b = bal(); $("#wdAmount", el).value = O.formatUnits(b.held + b.pending, O.tokenInfo(b.token).decimals); };
+  $("#wdBtn", el).onclick = async () => {
+    const n = $("#wdNote", el);
+    const b = bal(); const t = O.tokenInfo(b.token);
+    let amount;
+    try { amount = O.parseUnits($("#wdAmount", el).value.trim(), t.decimals); } catch { return note(n, "err", "Enter an amount."); }
+    const to = $("#wdTo", el).value.trim();
+    if (!O.isAddress(to)) return note(n, "err", "That destination isn't a valid 0x address.");
+    if (amount <= 0n || amount > b.held + b.pending) return note(n, "err", `You can withdraw up to ${O.fmt(b.held + b.pending, t.decimals)} ${t.symbol}.`);
+    if (await run(n, "Withdrawing. Confirm in your wallet…", () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "withdraw", args: [b.token, amount, to] }), "Sent.")) await load(false);
+  };
+}
+
+// ------------------------------------------------------------ flow
+async function load(render = true) {
+  if (!O.v2Live()) return renderNotLive();
+  if (!O.account) return renderConnect();
+  try {
+    const vault = await O.vaultOf(O.account);
+    if (!vault) { state = null; return renderCreate(); }
+    state = await O.readVault(vault);
+    if (render) renderDashboard();
+  } catch (err) {
+    view.innerHTML = `<div class="section"><div class="note err">Couldn't read from Celo: ${O.escapeHtml(O.cleanError(err))}</div></div>`;
+  }
+}
+
+async function doConnect() {
+  try {
+    const a = await O.connect();
+    who.innerHTML = `Connected <b>${O.short(a)}</b>`;
+    connectBtn.hidden = true;
+    await load();
+  } catch (err) {
+    who.textContent = O.cleanError(err);
+  }
+}
+connectBtn.onclick = doConnect;
+O.onAccountChange((a) => { who.innerHTML = a ? `Connected <b>${O.short(a)}</b>` : "Not connected"; connectBtn.hidden = !!a; load(); });
+
+// Refresh balances quietly while the overview is open, so an incoming payment shows up live.
+setInterval(async () => {
+  if (!state || document.hidden || !$('[data-tab="overview"][aria-selected="true"]')) return;
+  try { state = await O.readVault(state.vault); paneOverview($("#pane")); } catch {}
+}, 20000);
+
+// MiniPay injects an already-connected provider: connect straight away there.
+if (window.ethereum && window.ethereum.isMiniPay) doConnect(); else load();
+</script>
+</body>
+</html>
