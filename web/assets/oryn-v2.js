@@ -203,6 +203,8 @@ export async function recentActivity(vault, { blocks = 60_000n } = {}) {
   return out.sort((a, b) => Number(b.blockNumber - a.blockNumber) || b.logIndex - a.logIndex);
 }
 
+// Shared links always point at the public domain, never at a preview or local origin.
+export const SITE = "https://oryn.click";
 export function payUrl(vault, id) {
-  return `${location.origin}/pay?v=${vault}&l=${id}`;
+  return `${SITE}/pay?v=${vault}&l=${id}`;
 }
