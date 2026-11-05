@@ -12,7 +12,18 @@ import { celo } from "https://esm.sh/viem@2.55.2/chains";
 // Set once OrynVaultFactoryV2 is deployed (scripts/deployV2.ts prints it).
 export const ORYN_V2_FACTORY = "0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50";
 // Public URL of x402-service (Railway). Serves GET/POST /pay/:vault/:linkId.
-export const ORYN_API = "";
+export const ORYN_API = "https://oryn-agent-production.up.railway.app";
+
+/** True when the x402 service answers, so pages only offer gasless pay when it will work. */
+export async function apiUp() {
+  if (!ORYN_API) return false;
+  try {
+    const res = await fetch(`${ORYN_API}/health`, { signal: AbortSignal.timeout(6000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 export const AGENT_ADDRESS = "0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26";
 export const ATTRIBUTION_TAG = "celo_4781ba9a079a";
 // ERC-8021 suffix for ATTRIBUTION_TAG (same bytes as app.html / agent/src/lib/attribution.ts).

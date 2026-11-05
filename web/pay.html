@@ -56,6 +56,7 @@ const q = new URLSearchParams(location.search);
 const vaultParam = q.get("v") || "";
 const idParam = q.get("l") || "";
 let link = null;
+let gasless = false; // set once the x402 service has answered its health check
 
 function fail(msg) { card.innerHTML = `<div class="body"><h2>This link can't be paid</h2><p class="sub">${O.escapeHtml(msg)}</p><a class="btn ghost" href="/">Back to ORYN</a></div>`; }
 function note(kind, html) { const n = $("#payNote"); n.className = "note " + kind; n.innerHTML = kind === "wait" ? `<span class="spin"></span>${html}` : html; }
@@ -93,11 +94,11 @@ function render() {
     </div>
     <div class="body" id="payBody">
       <div class="kv"><span>Paid to</span><span class="mono">${O.short(link.owner)}'s vault <a href="https://celoscan.io/address/${link.vault}" target="_blank" rel="noopener">↗</a></span></div>
-      <div class="kv"><span>Network fee</span><span>${O.ORYN_API ? "None, it's gasless" : "A little CELO"}</span></div>
+      <div class="kv"><span>Network fee</span><span>${gasless ? "None, it's gasless" : "A little CELO"}</span></div>
       <div class="split"><div class="eyebrow" style="color:var(--c-wood);margin-bottom:8px">Split onchain on arrival</div>${legsHtml}</div>
       <div style="margin-top:20px" id="actions"><button class="btn primary block" type="button" id="connect">Connect wallet to pay</button></div>
       <div class="note" id="payNote"></div>
-      ${O.ORYN_API ? `<details class="agent"><summary>Paying from an agent?</summary><p>This link is a standard x402 resource. Any x402 client pays it, the same way:</p><pre>POST ${O.ORYN_API}/pay/${link.vault}/${link.id}</pre></details>` : ""}
+      ${gasless ? `<details class="agent"><summary>Paying from an agent?</summary><p>This link is a standard x402 resource. Any x402 client pays it, the same way:</p><pre>POST ${O.ORYN_API}/pay/${link.vault}/${link.id}</pre></details>` : ""}
     </div>`;
   $("#connect").onclick = connectAndPrepare;
 }
@@ -113,8 +114,8 @@ async function connectAndPrepare() {
     <div class="kv"><span>Paying from</span><span class="mono">${O.short(O.account)}</span></div>
     <div class="kv"><span>Your ${t.symbol}</span><span>${O.fmt(bal, t.decimals)}</span></div>
     <div style="margin-top:16px;display:grid;gap:10px">
-      ${O.ORYN_API ? `<button class="btn primary block" type="button" id="payX402" ${enough ? "" : "disabled"}>Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}, no gas</button>` : ""}
-      <button class="btn ${O.ORYN_API ? "ghost" : "primary"} block" type="button" id="payTransfer" ${enough ? "" : "disabled"}>${O.ORYN_API ? "Or pay with a regular transfer" : `Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}`}</button>
+      ${gasless ? `<button class="btn primary block" type="button" id="payX402" ${enough ? "" : "disabled"}>Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}, no gas</button>` : ""}
+      <button class="btn ${gasless ? "ghost" : "primary"} block" type="button" id="payTransfer" ${enough ? "" : "disabled"}>${gasless ? "Or pay with a regular transfer" : `Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}`}</button>
     </div>`;
   if (!enough) note("err", `You need ${O.fmt(link.amount, t.decimals)} ${t.symbol} and have ${O.fmt(bal, t.decimals)}. Top up this wallet, then reload.`);
   const x = $("#payX402"); if (x) x.onclick = payX402;
@@ -168,7 +169,10 @@ function done(tx) {
   </div>`;
 }
 
-try { link = await readLink(); render(); } catch (err) { fail(O.cleanError(err)); }
+try {
+  [link, gasless] = await Promise.all([readLink(), O.apiUp()]);
+  render();
+} catch (err) { fail(O.cleanError(err)); }
 </script>
 </body>
 </html>
