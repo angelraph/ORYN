@@ -243,6 +243,8 @@ export function parsePayLinkSentence(text) {
     .replace(/\b(charge|bill|invoice|request|cobrar|cobra|cobrá|cobre|pedir|factura(r)?|send|me)\b/gi, " ")
     .replace(/\b(usat|usa₮|usdc|usdt|usd₮|usd|dollars?|d[oó]lares?|wars|ars|pesos?|wbrl|brl|reais|real|wcop|cop|argentinos?|colombianos?)\b/gi, " ")
     .replace(/\b(monthly|weekly|one-?off|mensual|mensal|semanal|every (month|week)|por (mes|semana)|per (month|week))\b/gi, " ")
-    .replace(/\$/g, " ").replace(/[,;]\s*$/g, "").replace(/\s+/g, " ").replace(/^[\s,.-]+|[\s,.-]+$/g, "");
+    .replace(/\$/g, " ").replace(/[,;]\s*$/g, "").replace(/\s+/g, " ").replace(/^[\s,.-]+|[\s,.-]+$/g, "")
+    .replace(/^(the|a|an|el|la|los|las|un|una|o|os|as|um|uma)\s+/i, "");
+  memo = memo.charAt(0).toUpperCase() + memo.slice(1);
   return { symbol, amount: raw, period, memo: memo.slice(0, 80) };
 }
