@@ -10,10 +10,12 @@
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network celo",
     "agent": "tsx agent/src/index.ts",
     "agent:forever": "tsx agent/src/run-forever.ts",
-    "x402:serve": "tsx x402-service/server.ts"
+    "x402:serve": "tsx x402-service/server.ts",
+    "mcp": "tsx mcp/server.ts"
   },
   "dependencies": {
     "@celo/attribution-tags": "^0.3.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@x402/core": "^2.28.0",
     "@x402/evm": "^2.28.0",
     "@x402/express": "^2.28.0",
@@ -21,7 +23,8 @@
     "@x402/fetch": "^2.28.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "viem": "^2.55.2"
+    "viem": "^2.55.2",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.7",

@@ -10,5 +10,5 @@
     "outDir": "dist",
     "types": ["node"]
   },
-  "include": ["agent/**/*.ts", "x402-service/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "hardhat.config.ts"]
+  "include": ["agent/**/*.ts", "x402-service/**/*.ts", "mcp/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "hardhat.config.ts"]
 }

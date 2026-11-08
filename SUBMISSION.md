@@ -23,6 +23,8 @@ Your client opens oryn.click/pay, sees exactly how their payment will be split, 
 
 **Why USA₮:** the people ORYN serves invoice clients abroad and want to be paid in dollars, without asking those clients to hold CELO for gas or learn a new chain. USA₮ settles over x402 with an EIP-3009 authorisation, so the payer only signs. The same vault also accepts wARS, wBRL and wCOP (Permit2 with EIP-2612 gas sponsoring) for local-currency corridors.
 
+**Agent-native both ways:** every pay link is an x402 resource another agent can pay, and the ORYN MCP server (`mcp/server.ts`, see AGENT.md) gives Claude, Cursor or any MCP client four tools: read a vault, read a link and its split, pay a link over x402 (capped at the link's amount and a max the user sets), and create a pay link as a tagged transaction.
+
 **Non-custodial:** the agent can only split, release a queued leg to its own recipient, or convert through one allow-listed swap contract under an owner-set daily cap. It can never withdraw or change the split. This is enforced in OrynVaultV2.sol.
 
 **Gas architecture (as asked):** x402 settlements are relayed by Celo's facilitator, and that gas is not ours. ORYN's agent wallet pays its own gas for every `distribute()` and release call, all tagged. Owners pay their own gas for vault setup, pay links and withdrawals, also tagged. A payer who uses the regular-transfer fallback signs and pays their own gas, and that transfer carries the tag too.
