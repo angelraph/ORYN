@@ -31,6 +31,9 @@
   .tag.x402 { background: var(--c-yellow); }
   .tag.direct { background: var(--c-sand); }
   .tag.test { background: var(--c-lotus); }
+  .tag.ind { background: var(--c-jade); }
+  .tag.review { background: var(--c-citrus); }
+  .tag.new { background: var(--c-sky); }
   .note { font-size: 14px; color: var(--c-wood); margin: 0 0 18px; }
   .empty { padding: 28px; text-align: center; color: var(--c-wood); }
 </style>
@@ -72,7 +75,7 @@
 
 <main class="wrap" style="margin-top:-80px;position:relative">
   <div class="totals" id="totals"></div>
-  <p class="note">Payments marked <span class="tag x402">x402</span> were signed by the payer and settled by Celo's x402 facilitator, so the payer paid no gas. <span class="tag test">team test</span> marks our own end-to-end tests: they're shown so nothing is hidden, but they aren't user activity.</p>
+  <p class="note">Payments marked <span class="tag x402">x402</span> were signed by the payer and settled by Celo's x402 facilitator, so the payer paid no gas. <span class="tag test">team test</span> marks our own end-to-end tests: they're shown so nothing is hidden, but they aren't user activity. <span class="tag ind">independent</span> means the payer was active on Celo before the hackathon, wasn't first funded by us, and has never interacted with our wallets, all checked live from Blockscout. <span class="tag new">new to Celo</span> means a payer we never funded or touched, whose first Celo activity came after the hackathon started (6 Oct 2026). <span class="tag review">under review</span> means the wallet was funded by us or has interacted with our wallets.</p>
   <div id="list"><div class="pay empty"><span class="spin"></span> Reading the chain…</div></div>
 </main>
 
@@ -108,6 +111,32 @@
     }
     return out;
   }
+  // Our own wallets: owner, agent, collaborator, and the wallets that funded them.
+  const OURS = new Set(["0x3b47a91625f63d9a202b43906ce4005c37607d00", AGENT, "0x7a2042c86d70b7a689a75ac883ed6598582e072a", "0x9ffe8bf12437d30dc0bb321ee9ad76b488f664fb", "0xd7ce05e0108e9f8fadb361b05f952cf95335db5c", ...TEAM_TEST]);
+  // Agents on Open Rails start (loops.house event startDate).
+  const HACKATHON_START = Date.parse("2026-10-06T12:00:00Z");
+  async function oldest(url) {
+    // Blockscout lists newest first; walk to the last page (capped) to find the oldest item.
+    let items = [], next = "";
+    for (let i = 0; i < 6; i++) {
+      const r = await fetch(url + (next ? "?" + next : "")); if (!r.ok) break;
+      const j = await r.json(); items = items.concat(j.items);
+      if (!j.next_page_params) break; next = new URLSearchParams(j.next_page_params).toString();
+    }
+    return items;
+  }
+  async function payerSignals(addr) {
+    const [txs, tts] = await Promise.all([oldest(`${BS}/addresses/${addr}/transactions`), oldest(`${BS}/addresses/${addr}/token-transfers`)]);
+    const all = [...txs.map((t) => ({ ts: t.timestamp, from: t.from?.hash, to: t.to?.hash, value: t.value })), ...tts.map((t) => ({ ts: t.timestamp, from: t.from?.hash, to: t.to?.hash, value: t.total?.value }))]
+      .filter((x) => x.ts).sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+    const firstIn = all.find((x) => x.to && x.to.toLowerCase() === addr && x.from && x.value !== "0");
+    const since = all.length ? all[0].ts : null;
+    const linked = all.some((x) => (x.from && OURS.has(x.from.toLowerCase())) || (x.to && OURS.has(x.to.toLowerCase()) && x.to.toLowerCase() !== addr));
+    const fundedByUs = !!(firstIn && OURS.has(firstIn.from.toLowerCase()));
+    const before = since && Date.parse(since) < HACKATHON_START;
+    const clean = !fundedByUs && !linked;
+    return { since, firstFunder: firstIn?.from || null, linked, fundedByUs, independent: before && clean, newUser: !before && clean, count: all.length };
+  }
   const amountOf = (t) => Number(t.total.value) / 10 ** Number(t.total.decimals || t.token.decimals);
   const fmt = (n) => n.toLocaleString("en-US", { maximumFractionDigits: n < 1 ? 4 : 2 });
 
@@ -135,13 +164,19 @@
     await Promise.all(payments.map(async (p) => {
       try { const tx = await (await fetch(`${BS}/transactions/${p.t.transaction_hash}`)).json(); p.sender = tx.from.hash.toLowerCase(); } catch { p.sender = null; }
     }));
+    // Independence signals per payer: first Celo activity and first funder, and whether that
+    // funder or the payer ever touched our own wallets.
+    const payerList = [...new Set(payments.map((p) => p.t.from.hash.toLowerCase()))];
+    const info = {};
+    await Promise.all(payerList.map(async (a) => { try { info[a] = await payerSignals(a); } catch { info[a] = null; } }));
+    for (const p of payments) p.sig = info[p.t.from.hash.toLowerCase()];
     payments.sort((a, b) => b.t.block_number - a.t.block_number);
 
     const real = payments.filter((p) => !TEAM_TEST.has(p.t.from.hash.toLowerCase()));
-    const payers = new Set(real.map((p) => p.t.from.hash.toLowerCase()));
+    const payers = new Set(real.filter((p) => p.sig?.independent).map((p) => p.t.from.hash.toLowerCase()));
     const usd = real.filter((p) => ["USAT", "USDC", "USDT", "USD₮"].includes(p.t.token.symbol)).reduce((s, p) => s + amountOf(p.t), 0);
     document.getElementById("totals").innerHTML = [
-      [real.length, "User payments"], [payers.size, "Unique payers"], ["$" + fmt(usd), "Paid in by users"], [splitCount, "Agent splits"], [vaults.length, "v2 vaults"],
+      [real.length, "User payments"], [payers.size, "Independent payers"], [new Set(real.filter((p) => p.sig?.newUser).map((p) => p.t.from.hash.toLowerCase())).size, "New to Celo"], ["$" + fmt(usd), "Paid in by users"], [splitCount, "Agent splits"], [vaults.length, "v2 vaults"],
     ].map(([v, k]) => `<div class="tot"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
 
     if (!payments.length) { document.getElementById("list").innerHTML = `<div class="pay empty">No payments yet.</div>`; return; }
@@ -154,10 +189,11 @@
         : `<span class="pay-meta">Split pending</span>`;
       return `<div class="pay">
         <div class="pay-top">
-          <div class="pay-amt">${fmt(amountOf(p.t))} ${p.t.token.symbol}<span class="tag ${x402 ? "x402" : "direct"}">${x402 ? "x402" : "direct transfer"}</span>${test ? `<span class="tag test">team test</span>` : ""}</div>
+          <div class="pay-amt">${fmt(amountOf(p.t))} ${p.t.token.symbol}<span class="tag ${x402 ? "x402" : "direct"}">${x402 ? "x402" : "direct transfer"}</span>${test ? `<span class="tag test">team test</span>` : p.sig?.independent ? `<span class="tag ind">independent</span>` : p.sig?.newUser ? `<span class="tag new">new to Celo</span>` : p.sig ? `<span class="tag review">under review</span>` : ""}</div>
           <div class="pay-meta">${when}</div>
         </div>
         <div class="pay-meta">from <a href="${scan("address", payer)}" target="_blank" rel="noopener">${payer}</a> into vault <a href="${scan("address", p.vault)}#tokentxns" target="_blank" rel="noopener">${short(p.vault)}</a></div>
+        ${p.sig ? `<div class="pay-meta">Wallet active on Celo since ${p.sig.since ? new Date(p.sig.since).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "unknown"} · first funded by ${p.sig.firstFunder ? `<a href="${scan("address", p.sig.firstFunder)}" target="_blank" rel="noopener">${short(p.sig.firstFunder)}</a>` : "unknown"}${p.sig.fundedByUs ? " (our wallet)" : ""}${p.sig.linked && !test ? " · has interacted with our wallets" : ""}</div>` : ""}
         <div class="pay-links"><a href="${scan("tx", p.t.transaction_hash)}" target="_blank" rel="noopener">Settlement ↗</a>${split}</div>
       </div>`;
     }).join("");
