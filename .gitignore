@@ -17,3 +17,6 @@ coverage.json
 skills/
 skills-lock.json
 data/*.json
+media/*.mp4
+media/*.srt
+media/TRANSCRIPT.md

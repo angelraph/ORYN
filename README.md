@@ -6,11 +6,11 @@ ORYN is a payment agent on Celo mainnet for freelancers, creators and small team
 
 Any AI agent can use ORYN too: through the [ORYN MCP server](AGENT.md#the-oryn-mcp-server), Claude, Cursor or any MCP client can read a vault, create pay links and pay ORYN links over x402 by itself.
 
-[**Live app: oryn.click**](https://oryn.click) · [**Demo video (3:20)**](media/oryn-demo.mp4) · [**Create a vault**](https://oryn.click/vault) · [**Live proof: every payment**](https://oryn.click/proof) · [Factory on Celoscan](https://celoscan.io/address/0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50) · [Agent identity (ERC-8004)](https://8004scan.io/agents/celo/9688) · [Submission](SUBMISSION.md) · [Agent and MCP](AGENT.md) · [Internal review](AUDIT.md)
+[**Live app: oryn.click**](https://oryn.click) · [**Demo video (3:20)**](https://youtu.be/lgaA1FE5e9o) · [**Create a vault**](https://oryn.click/vault) · [**Live proof: every payment**](https://oryn.click/proof) · [Factory on Celoscan](https://celoscan.io/address/0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50) · [Agent identity (ERC-8004)](https://8004scan.io/agents/celo/9688) · [Submission](SUBMISSION.md) · [Agent and MCP](AGENT.md) · [Internal review](AUDIT.md)
 
-[![Watch the ORYN walkthrough (3:20)](media/demo-thumbnail.jpg)](media/oryn-demo.mp4)
+[![Watch the ORYN walkthrough (3:20)](media/demo-thumbnail.jpg)](https://youtu.be/lgaA1FE5e9o)
 
-*A 3:20 walkthrough: creating a vault, pay links in one sentence, what the payer sees, a real mainnet payment and its split, the proof page, and the MCP server. Every app shot is the live site on Celo mainnet. Captions: [oryn-demo.srt](media/oryn-demo.srt) · transcript: [TRANSCRIPT.md](media/TRANSCRIPT.md).*
+*Watch the 3:20 walkthrough on YouTube. Every app shot is the live site on Celo mainnet; how it was made is in [video/README.md](video/README.md).*
 
 Built by angelraph for **Celo Agents on Open Rails** (loops.house), track **Stable Agents: Open Corridors, USA₮ with x402**.
 
@@ -91,7 +91,7 @@ Every payment since is listed at **[oryn.click/proof](https://oryn.click/proof)*
 | [`/vault`](https://oryn.click/vault) | Create a vault with a live split builder (legs, savings, validation), then manage it: overview, pay links (describe one in a sentence, copy, QR, WhatsApp, share, keep the split private, switch off), split rules, activity, withdraw |
 | [`/pay`](https://oryn.click/pay?v=0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb&l=1) | The public pay page, in English, Spanish or Portuguese. Reads the link from the chain, checks it belongs to an ORYN vault, shows the payer how their money will be split (unless the owner keeps it private), screens the payer against the sanctions list, and pays gasless over x402 (or by plain transfer as a fallback) |
 | [`/receipt`](https://oryn.click/receipt?tx=0xb08a80a92c880a6f3f836b873366ec99d35b448608d9fb800ad2f858fa75ce5c&v=0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb&l=1) | A printable receipt for any payment, read from the chain, in three languages |
-| [`/proof`](https://oryn.click/proof) | Every payment into every vault, how it settled, the agent's split, and per-payer independence signals |
+| [`/proof`](https://oryn.click/proof) | Every payment into every vault, how it settled, the agent's split, and per-payer independence signals. Linked from every page's menu |
 | [`/`](https://oryn.click) | Landing page with live network numbers read from the chain |
 | [`/app`](https://oryn.click/app) | The classic v1 cUSD app, still live for earlier vaults |
 
@@ -211,7 +211,7 @@ npm test                                  # 19 contract tests, no keys needed
 cp .env.example .env                      # AGENT_PRIVATE_KEY, X402_API_KEY, ORYN_V2_FACTORY, ...
 npm run agent:forever                     # agent (v1 + v2 watchers) and x402-service
 npm run mcp                               # the MCP server on stdio
-python -m http.server 5173 --directory web   # the web app, then open /vault.html
+node scripts/serve-web.mjs                # the web app on :5173, with clean URLs like Vercel
 ```
 
 To deploy your own factory: `npx tsx scripts/deployV2.ts --dry-run` to estimate gas, then without `--dry-run` (tagged). Put the address in `ORYN_V2_FACTORY` and in `web/assets/oryn-v2.js`.
@@ -238,7 +238,9 @@ mcp/
 web/
   vault.html, pay.html, proof.html, index.html
   assets/oryn-v2.js         shared chain reads, wallet, tagged send, x402 signer
-scripts/                    deploy, checks, tag verification, payment reports
+scripts/                    deploy, checks, tag verification, payment reports, local web server
+media/                      demo video thumbnail
+video/                      how the demo video was made
 test/                       contract tests
 ```
 
@@ -249,6 +251,7 @@ test/                       contract tests
 | [SUBMISSION.md](SUBMISSION.md) | The hackathon entry: description, why USA₮, gas architecture, proof |
 | [AGENT.md](AGENT.md) | The agent loop, its trust model, and the MCP server with setup for Claude and Cursor |
 | [AUDIT.md](AUDIT.md) | Internal review: threat model, what's enforced onchain, known limits |
+| [video/README.md](video/README.md) | How the demo video was made, and its chapters |
 | [oryn.click/docs](https://oryn.click/docs) | User guides |
 
 ## Risks

@@ -8,7 +8,8 @@ Text for the loops.house entry and the X post. Add new independent payments to t
 - **One-liner:** Pay links that settle USA₮ gasless over x402 and split themselves onchain on Celo.
 - **Primary track:** Stable Agents: Open Corridors, USA₮ with x402
 - **Repo:** https://github.com/angelraph/ORYN (public)
-- **App:** https://oryn.click/vault · pay page https://oryn.click/pay
+- **App:** https://oryn.click/vault · pay page https://oryn.click/pay · proof https://oryn.click/proof
+- **Demo video (3:20):** https://youtu.be/lgaA1FE5e9o
 - **ERC-8004 identity:** https://8004scan.io/agents/celo/9688
 - **Agent wallet:** 0xeae6959bE76b5f2ad2142A6fe5E4Cf4F9Ca45d26
 - **PayTo wallets:** x402 pay links settle with `payTo` = the owner's own OrynVaultV2 clone. Every v2 vault is created by factory 0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50 and listed by `allVaults()`. Vault that received payments: 0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb (https://celoscan.io/address/0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb#tokentxns).
