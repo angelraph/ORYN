@@ -6,7 +6,11 @@ ORYN is a payment agent on Celo mainnet for freelancers, creators and small team
 
 Any AI agent can use ORYN too: through the [ORYN MCP server](AGENT.md#the-oryn-mcp-server), Claude, Cursor or any MCP client can read a vault, create pay links and pay ORYN links over x402 by itself.
 
-[**Live app: oryn.click**](https://oryn.click) · [**Create a vault**](https://oryn.click/vault) · [**Live proof: every payment**](https://oryn.click/proof) · [Factory on Celoscan](https://celoscan.io/address/0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50) · [Agent identity (ERC-8004)](https://8004scan.io/agents/celo/9688) · [Submission](SUBMISSION.md) · [Agent and MCP](AGENT.md) · [Internal review](AUDIT.md)
+[**Live app: oryn.click**](https://oryn.click) · [**Demo video (3:20)**](media/oryn-demo.mp4) · [**Create a vault**](https://oryn.click/vault) · [**Live proof: every payment**](https://oryn.click/proof) · [Factory on Celoscan](https://celoscan.io/address/0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50) · [Agent identity (ERC-8004)](https://8004scan.io/agents/celo/9688) · [Submission](SUBMISSION.md) · [Agent and MCP](AGENT.md) · [Internal review](AUDIT.md)
+
+[![Watch the ORYN walkthrough (3:20)](media/demo-thumbnail.jpg)](media/oryn-demo.mp4)
+
+*A 3:20 walkthrough: creating a vault, pay links in one sentence, what the payer sees, a real mainnet payment and its split, the proof page, and the MCP server. Every app shot is the live site on Celo mainnet. Captions: [oryn-demo.srt](media/oryn-demo.srt) · transcript: [TRANSCRIPT.md](media/TRANSCRIPT.md).*
 
 Built by angelraph for **Celo Agents on Open Rails** (loops.house), track **Stable Agents: Open Corridors, USA₮ with x402**.
 
