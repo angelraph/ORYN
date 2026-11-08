@@ -308,7 +308,8 @@ function paneLinks(el) {
       box.classList.toggle("on");
     };
     const sh = $("[data-share]", card);
-    if (sh) sh.onclick = () => navigator.share({ title: "Pay with ORYN", text: `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}`, url }).catch(() => {});    $("[data-toggle]", card).onclick = async () => {
+    if (sh) sh.onclick = () => navigator.share({ title: "Pay with ORYN", text: `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}`, url }).catch(() => {});
+    $("[data-toggle]", card).onclick = async () => {
       const ok = await run($(".note", card), "Updating link. Confirm in your wallet…",
         () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "setLinkActive", args: [BigInt(l.id), !l.active] }), "Updated.");
       if (ok) { await load(false); renderDashboard("links"); }

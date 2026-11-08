@@ -44,6 +44,8 @@ This is our own review of ORYN v2, written to be read by judges and users. It is
 | Liveness | One agent instance on Railway | If it stops, splits pause; funds stay safe in the vault and the owner can withdraw | Add a second keeper; owners can replace the agent |
 | Pay links | "One-off" is a label; a link stays payable until the owner switches it off | A link can be paid more than once | Optional auto-close after the first payment |
 | Proof page | Independence signals come from Blockscout and a capped history walk | Very active wallets may show a later "active since" date than the true one | Fine for review; judges can confirm on Celoscan |
+| Sanctions screening | Relies on Chainalysis' onchain oracle; if it can't be read, the x402 service logs it and lets the payment through rather than blocking every payer | A flagged payer could slip through during an oracle outage | Acceptable trade-off for liveness; revisit with a second list |
+| Private splits | Hiding the split is a pay-page display choice (`&p=1`); the split itself is public onchain | Someone reading the contract can still work it out | Stated plainly to users |
 | MCP keys | Write tools read private keys from the environment | Anyone with access to that machine can use them | Use a dedicated small-balance payer wallet |
 
 ## Disclosure

@@ -20,6 +20,10 @@ Built by angelraph for **Celo Agents on Open Rails** (loops.house), track **Stab
 | **Currencies** | USA₮, USDC, USD₮ (EIP-3009) and wARS, wBRL, wCOP (Permit2 with EIP-2612 gas sponsoring) |
 | **Autonomous agent** | Live on Railway. Reads every vault's pending balance every 15 s in one multicall and calls `distribute()` as a tagged transaction |
 | **Agent-native** | x402 pay links any agent can pay, plus an MCP server with 4 tools (read vault, read link, pay link, create link) |
+| **Payer safety** | Every payer is screened against Chainalysis' onchain sanctions oracle on Celo, in the pay page, the x402 service and the MCP server |
+| **For LatAm** | Pay page and receipts in English, Spanish and Portuguese; pay links from one sentence in any of the three ("cobrar 4500 pesos pizza"); WhatsApp sharing |
+| **Receipts** | A printable receipt for every payment at `/receipt`, read from the chain: payer, settlement, method, and the agent's split |
+| **Private splits** | A link variant that hides who gets what from the payer, for paying subcontractors without putting their rate on the invoice |
 | **Proof** | [oryn.click/proof](https://oryn.click/proof): every payment and split, read live from the chain, with independence signals per payer |
 | **Attribution** | ERC-8021 tag `celo_4781ba9a079a` on every transaction ORYN, its agent and its users send |
 | **Tests** | 19 contract tests (splits, FX guards, pay links, clones, access control), all passing |
@@ -80,8 +84,9 @@ Every payment since is listed at **[oryn.click/proof](https://oryn.click/proof)*
 
 | Page | What it does |
 |---|---|
-| [`/vault`](https://oryn.click/vault) | Create a vault with a live split builder (legs, savings, validation), then manage it: overview, pay links (create, copy, QR, share, switch off), split rules, activity, withdraw |
-| [`/pay`](https://oryn.click/pay?v=0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb&l=1) | The public pay page. Reads the link from the chain, checks it belongs to an ORYN vault, shows the payer exactly how their money will be split, and pays gasless over x402 (or by plain transfer as a fallback) |
+| [`/vault`](https://oryn.click/vault) | Create a vault with a live split builder (legs, savings, validation), then manage it: overview, pay links (describe one in a sentence, copy, QR, WhatsApp, share, keep the split private, switch off), split rules, activity, withdraw |
+| [`/pay`](https://oryn.click/pay?v=0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb&l=1) | The public pay page, in English, Spanish or Portuguese. Reads the link from the chain, checks it belongs to an ORYN vault, shows the payer how their money will be split (unless the owner keeps it private), screens the payer against the sanctions list, and pays gasless over x402 (or by plain transfer as a fallback) |
+| [`/receipt`](https://oryn.click/receipt?tx=0xb08a80a92c880a6f3f836b873366ec99d35b448608d9fb800ad2f858fa75ce5c&v=0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb&l=1) | A printable receipt for any payment, read from the chain, in three languages |
 | [`/proof`](https://oryn.click/proof) | Every payment into every vault, how it settled, the agent's split, and per-payer independence signals |
 | [`/`](https://oryn.click) | Landing page with live network numbers read from the chain |
 | [`/app`](https://oryn.click/app) | The classic v1 cUSD app, still live for earlier vaults |
@@ -173,6 +178,8 @@ Payers see the split before they sign. Errors are written in plain words, balanc
 - **Locked implementation.** The v2 implementation can't be initialised, and each clone initialises exactly once.
 - **The agent can't take money.** See the trust model above, and the tests "never lets the agent withdraw" and "keeps the agent and strangers away from owner powers".
 - **Payer protection.** The pay page and the MCP server both refuse links that don't come from ORYN's factory, and cap the x402 signature at exactly the link's amount.
+- **Sanctions screening.** The pay page and the x402 service check the payer, and the MCP server checks the vault owner, against [Chainalysis' sanctions oracle](https://celoscan.io/address/0x40C57923924B5c5c5455c48D93317139ADDaC8fb) on Celo before any money moves. The x402 service answers HTTP 451 for a flagged payer.
+- **One-sentence links are deterministic.** The sentence parser (`parsePayLinkSentence` in `web/assets/oryn-v2.js`) only fills the form; no model ever computes an amount, and the owner confirms before anything is published.
 - **Tag checks.** `npx tsx scripts/verifyTags.ts <txHash>` decodes any transaction and confirms the attribution tag.
 - **Payment reports.** `npx tsx scripts/vaultPayments.ts <vault>` lists every USA₮ payment in and split out of a vault.
 
@@ -188,6 +195,7 @@ Our own review of the design, its limits and what we'd fix next: [AUDIT.md](AUDI
 - **First mainnet payments:** a team test, then the first independent x402 payment, each split by the agent within seconds.
 - **Proof page:** every payment and split, live from the chain, with independence signals.
 - **MCP server:** ORYN's flows as tools for AI agents.
+- **Payer safety and LatAm:** sanctions screening, receipts, the pay page in Spanish and Portuguese, one-sentence pay links, WhatsApp sharing, and private splits (the last asked for by a user on X).
 
 ## Quickstart
 
@@ -244,6 +252,7 @@ test/                       contract tests
 - **Unaudited contracts.** The contracts are tested but have not had an external audit. Use amounts you're comfortable with.
 - **Agent liveness.** If the agent stops, payments wait safely in the vault as `pending` and the owner can still withdraw; nothing is lost, but splits pause.
 - **FX legs.** The agent's Textile quote path isn't built yet; queued FX legs are released in the original currency after 10 minutes.
+- **Private splits are a display choice.** The split still runs onchain, so anyone reading the vault contract can work it out. It keeps a subcontractor's rate off the invoice, not off the blockchain.
 - **Facilitator dependency.** Gasless payments depend on Celo's x402 facilitator. If it's down, payers can still pay by plain transfer from the same page.
 
 ## License
