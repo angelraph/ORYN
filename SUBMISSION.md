@@ -27,6 +27,8 @@ Your client opens oryn.click/pay, sees exactly how their payment will be split, 
 
 **Gas architecture (as asked):** x402 settlements are relayed by Celo's facilitator, and that gas is not ours. ORYN's agent wallet pays its own gas for every `distribute()` and release call, all tagged. Owners pay their own gas for vault setup, pay links and withdrawals, also tagged. A payer who uses the regular-transfer fallback signs and pays their own gas, and that transfer carries the tag too.
 
+**Live proof, always current:** https://oryn.click/proof lists every payment into every ORYN v2 vault, with its x402 settlement and the agent's split, read from the chain on each visit.
+
 **Proof: independent x402 payments** (payer wallet, its history, settlement, then the agent's tagged split):
 
 1. 1 USA₮ from 0xDbe1d5Cb2c77F65F527966fA58a902ae727cECea. Active on Celo since Dec 2021; funded for this payment through the Relay bridge and a Uniswap swap, with no link to our wallets.

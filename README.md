@@ -24,7 +24,7 @@ Every transaction ORYN or its users send goes through one funnel that appends th
 
 ### Live on mainnet
 
-A real payment, end to end: an independent wallet (active on Celo since 2021) paid a 1 USA₮ ORYN pay link with one signature. Celo's x402 facilitator [settled it into the vault](https://celoscan.io/tx/0xb08a80a92c880a6f3f836b873366ec99d35b448608d9fb800ad2f858fa75ce5c), and the agent [split it](https://celoscan.io/tx/0x10c0c986d104ff581c061017d8d20bbbc375f5249615c9ec9fab33c4350cbede) 17 blocks later in a tagged transaction: 90% to the collaborator, 10% kept as savings. All payments into a vault and splits out of it: `npx tsx scripts/vaultPayments.ts <vault>`.
+A real payment, end to end: an independent wallet (active on Celo since 2021) paid a 1 USA₮ ORYN pay link with one signature. Celo's x402 facilitator [settled it into the vault](https://celoscan.io/tx/0xb08a80a92c880a6f3f836b873366ec99d35b448608d9fb800ad2f858fa75ce5c), and the agent [split it](https://celoscan.io/tx/0x10c0c986d104ff581c061017d8d20bbbc375f5249615c9ec9fab33c4350cbede) 17 blocks later in a tagged transaction: 90% to the collaborator, 10% kept as savings. Every payment into every v2 vault, with its settlement and split, is listed live at **https://oryn.click/proof** (read from the chain on each visit; our own test payments are labelled). From the command line: `npx tsx scripts/vaultPayments.ts <vault>`.
 
 ## How it works
 

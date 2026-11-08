@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: Proof</title>
+<meta name="description" content="Every payment into an ORYN vault on Celo mainnet, with its x402 settlement and the agent's split. Read live from the chain." />
+<link rel="canonical" href="https://oryn.click/proof" />
+<meta property="og:title" content="ORYN Proof" />
+<meta property="og:description" content="Every payment into an ORYN vault and every split, live from Celo mainnet." />
+<meta property="og:image" content="https://oryn.click/assets/oryn-og.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/v2.css" />
+<link rel="stylesheet" href="/assets/site.css" />
+<script src="/assets/nav.js" defer></script>
+<style>
+  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .tot { background: var(--c-snow); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .tot .v { font-family: var(--font-display); font-weight: 300; font-size: 34px; line-height: 1.1; }
+  .tot .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--c-wood); margin-top: 4px; }
+  .pay { background: var(--c-snow); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; }
+  .pay-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .pay-amt { font-family: var(--font-display); font-weight: 300; font-size: 26px; }
+  .pay-meta { font-family: var(--font-mono); font-size: 12px; color: var(--c-wood); overflow-wrap: anywhere; }
+  .pay-links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 14px; }
+  .tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; padding: 3px 9px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .tag.x402 { background: var(--c-yellow); }
+  .tag.direct { background: var(--c-sand); }
+  .tag.test { background: var(--c-lotus); }
+  .note { font-size: 14px; color: var(--c-wood); margin: 0 0 18px; }
+  .empty { padding: 28px; text-align: center; color: var(--c-wood); }
+</style>
+</head>
+<body data-page="proof">
+
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="92" height="30" /></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/" data-nav="home">Home</a>
+      <a href="/vault" data-nav="vault">Vault</a>
+      <a href="/proof" data-nav="proof">Proof</a>
+      <a href="/docs" data-nav="docs">Docs</a>
+      <a href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub<span class="ext">&nbsp;↗</span></a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-block" href="https://celoscan.io/blocks" target="_blank" rel="noopener" title="Latest Celo mainnet block"><span class="nav-pulse"></span>CELO <b data-block>live</b></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navSheet" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="nav-sheet" id="navSheet" hidden>
+  <a class="big" href="/" data-nav="home">Home <small>Overview</small></a>
+  <a class="big" href="/vault" data-nav="vault">Vault <small>Pay links · Split · Withdraw</small></a>
+  <a class="big" href="/proof" data-nav="proof">Proof <small>Every payment, live</small></a>
+  <a class="big" href="/docs" data-nav="docs">Docs <small>Guides</small></a>
+  <a class="big" href="https://github.com/angelraph/ORYN" target="_blank" rel="noopener">GitHub <small>Source ↗</small></a>
+</div>
+
+<div class="band">
+  <svg class="cube" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#FCFF52" stroke-width="0.6"><path d="M50 8 88 30v40L50 92 12 70V30z"/><path d="M50 8v84M12 30l76 40M88 30 12 70"/></g></svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span>Live from Celo mainnet</div>
+    <h1>Every payment. <em>Every split.</em></h1>
+    <p>Each payment into an ORYN vault, how it was settled, and the agent's split that followed. Nothing here is typed by hand: it's read from the chain each time you open the page.</p>
+  </div>
+</div>
+
+<main class="wrap" style="margin-top:-80px;position:relative">
+  <div class="totals" id="totals"></div>
+  <p class="note">Payments marked <span class="tag x402">x402</span> were signed by the payer and settled by Celo's x402 facilitator, so the payer paid no gas. <span class="tag test">team test</span> marks our own end-to-end tests: they're shown so nothing is hidden, but they aren't user activity.</p>
+  <div id="list"><div class="pay empty"><span class="spin"></span> Reading the chain…</div></div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <div class="foot-bottom"><span>© 2026 ORYN · oryn.click</span><span>Built for Celo Agents on Open Rails · <code>celo_4781ba9a079a</code></span></div>
+  </div>
+</footer>
+
+<script>
+  const RPC = "https://forno.celo.org";
+  const BS = "https://celo.blockscout.com/api/v2";
+  const FACTORY_V2 = "0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50";
+  const AGENT = "0xeae6959be76b5f2ad2142a6fe5e4cf4f9ca45d26";
+  // Wallets we funded ourselves. Their payments are listed, labelled as tests.
+  const TEAM_TEST = new Set(["0x1f8eb41cf3e9cafa36586934dee82a81590d7a49"]);
+  const SPLIT_METHODS = new Set(["distribute", "releaseConversion", "0x63453ae1", "0x5188eea5"]);
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  const scan = (kind, v) => `https://celoscan.io/${kind}/${v}`;
+
+  async function call(to, data) {
+    const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }) });
+    return BigInt((await r.json()).result);
+  }
+  async function pages(url) {
+    const out = []; let next = "";
+    for (let i = 0; i < 20; i++) {
+      const r = await fetch(url + (url.includes("?") ? "&" : "?") + next);
+      if (!r.ok) throw new Error("blockscout " + r.status);
+      const j = await r.json(); out.push(...j.items);
+      if (!j.next_page_params) break;
+      next = new URLSearchParams(j.next_page_params).toString();
+    }
+    return out;
+  }
+  const amountOf = (t) => Number(t.total.value) / 10 ** Number(t.total.decimals || t.token.decimals);
+  const fmt = (n) => n.toLocaleString("en-US", { maximumFractionDigits: n < 1 ? 4 : 2 });
+
+  async function load() {
+    const n = await call(FACTORY_V2, "0xa7c6a100");
+    const vaults = [];
+    for (let i = 0n; i < n; i++) vaults.push("0x" + (await call(FACTORY_V2, "0x9094a91e" + i.toString(16).padStart(64, "0"))).toString(16).padStart(40, "0"));
+
+    const payments = [];
+    let splitCount = 0;
+    await Promise.all(vaults.map(async (vault) => {
+      const [ins, outs] = await Promise.all([pages(`${BS}/addresses/${vault}/token-transfers?filter=to`), pages(`${BS}/addresses/${vault}/token-transfers?filter=from`)]);
+      const splits = outs.filter((t) => SPLIT_METHODS.has(t.method)).sort((a, b) => a.block_number - b.block_number);
+      splitCount += new Set(splits.map((s) => s.transaction_hash)).size;
+      const inSorted = ins.sort((a, b) => a.block_number - b.block_number);
+      inSorted.forEach((t, i) => {
+        const token = t.token.address_hash.toLowerCase();
+        const nextBlock = inSorted.slice(i + 1).find((u) => u.token.address_hash.toLowerCase() === token)?.block_number ?? Infinity;
+        const mine = splits.filter((s) => s.token.address_hash.toLowerCase() === token && s.block_number >= t.block_number && s.block_number < nextBlock);
+        payments.push({ vault, t, splits: mine });
+      });
+    }));
+
+    // Who sent each settlement tx: a relayer (x402) or the payer themselves.
+    await Promise.all(payments.map(async (p) => {
+      try { const tx = await (await fetch(`${BS}/transactions/${p.t.transaction_hash}`)).json(); p.sender = tx.from.hash.toLowerCase(); } catch { p.sender = null; }
+    }));
+    payments.sort((a, b) => b.t.block_number - a.t.block_number);
+
+    const real = payments.filter((p) => !TEAM_TEST.has(p.t.from.hash.toLowerCase()));
+    const payers = new Set(real.map((p) => p.t.from.hash.toLowerCase()));
+    const usd = real.filter((p) => ["USAT", "USDC", "USDT", "USD₮"].includes(p.t.token.symbol)).reduce((s, p) => s + amountOf(p.t), 0);
+    document.getElementById("totals").innerHTML = [
+      [real.length, "User payments"], [payers.size, "Unique payers"], ["$" + fmt(usd), "Paid in by users"], [splitCount, "Agent splits"], [vaults.length, "v2 vaults"],
+    ].map(([v, k]) => `<div class="tot"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+
+    if (!payments.length) { document.getElementById("list").innerHTML = `<div class="pay empty">No payments yet.</div>`; return; }
+    document.getElementById("list").innerHTML = payments.map((p) => {
+      const payer = p.t.from.hash, test = TEAM_TEST.has(payer.toLowerCase());
+      const x402 = p.sender && p.sender !== payer.toLowerCase();
+      const when = new Date(p.t.timestamp).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+      const split = p.splits.length
+        ? p.splits.map((s) => `<a href="${scan("tx", s.transaction_hash)}" target="_blank" rel="noopener">Agent split: ${fmt(amountOf(s))} ${s.token.symbol} to ${short(s.to.hash)} ↗</a>`).join("")
+        : `<span class="pay-meta">Split pending</span>`;
+      return `<div class="pay">
+        <div class="pay-top">
+          <div class="pay-amt">${fmt(amountOf(p.t))} ${p.t.token.symbol}<span class="tag ${x402 ? "x402" : "direct"}">${x402 ? "x402" : "direct transfer"}</span>${test ? `<span class="tag test">team test</span>` : ""}</div>
+          <div class="pay-meta">${when}</div>
+        </div>
+        <div class="pay-meta">from <a href="${scan("address", payer)}" target="_blank" rel="noopener">${payer}</a> into vault <a href="${scan("address", p.vault)}#tokentxns" target="_blank" rel="noopener">${short(p.vault)}</a></div>
+        <div class="pay-links"><a href="${scan("tx", p.t.transaction_hash)}" target="_blank" rel="noopener">Settlement ↗</a>${split}</div>
+      </div>`;
+    }).join("");
+  }
+  load().catch((e) => { document.getElementById("list").innerHTML = `<div class="pay empty">Couldn't read the chain right now (${e.message}). Reload in a moment.</div>`; });
+</script>
+</body>
+</html>
