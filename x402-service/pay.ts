@@ -128,12 +128,37 @@ export const payRoutes: Record<string, RouteConfig> = {
   },
 };
 
-/** Runs before the payment middleware: 404s bad links for free, and warms the link cache. */
+// Chainalysis' onchain sanctions oracle on Celo mainnet (free, no key).
+const SANCTIONS_ORACLE = "0x40C57923924B5c5c5455c48D93317139ADDaC8fb" as const;
+const sanctionsAbi = [{ type: "function", name: "isSanctioned", stateMutability: "view", inputs: [{ name: "addr", type: "address" }], outputs: [{ type: "bool" }] }] as const;
+
+/** The payer named in an x402 payment header (EIP-3009 or Permit2 payload), if there is one. */
+function payerFromHeader(req: Request): Address | null {
+  const raw = req.header("payment-signature") ?? req.header("x-payment");
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(Buffer.from(raw, "base64").toString("utf8"));
+    const from = p?.payload?.authorization?.from ?? p?.payload?.permit2Authorization?.from ?? p?.payload?.from;
+    return typeof from === "string" && isAddress(from) ? getAddress(from) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Runs before the payment middleware: 404s bad links for free, warms the link cache, and
+ * refuses payers on the sanctions list before anything is settled. */
 export async function validatePayLink(req: Request, res: Response, next: NextFunction) {
   const m = PAY_PATH.exec(req.path);
   if (!m) return next();
   try {
     await resolveLink(m[1], m[2]);
+    const payer = req.method === "POST" ? payerFromHeader(req) : null;
+    if (payer) {
+      const flagged = await publicClient
+        .readContract({ address: SANCTIONS_ORACLE, abi: sanctionsAbi, functionName: "isSanctioned", args: [payer] })
+        .catch((e) => { console.warn("[pay] sanctions oracle unreachable, allowing", payer, e instanceof Error ? e.message : e); return false; });
+      if (flagged) return void res.status(451).json({ error: "This wallet is on a sanctions list, so this payment can't be accepted. Nothing was taken." });
+    }
     next();
   } catch (err) {
     const status = err instanceof LinkError ? err.status : 502;

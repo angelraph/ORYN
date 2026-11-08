@@ -246,6 +246,9 @@ function paneLinks(el) {
   const s = state;
   el.innerHTML = `
     <h3>New pay link</h3>
+    <label class="f"><span>Describe it in one sentence (English, Español, Português)</span>
+      <div style="display:flex;gap:8px"><input id="lkSay" placeholder="e.g. charge 25 USAT for the logo design, monthly" style="flex:1" /><button class="btn small dark" type="button" id="lkFill">Fill in</button></div></label>
+    <p class="sub" style="font-size:12.5px;margin:-4px 0 14px">Try "cobrar 4500 pesos pizza" or "cobrar 30 reais pelo design semanal". ORYN fills the form below; you check it and create the link.</p>
     <div class="grid2">
       <label class="f"><span>Currency</span><select id="lkToken">${O.TOKENS.map((t) => `<option value="${t.address}">${t.flag} ${t.symbol} · ${t.currency}</option>`).join("")}</select></label>
       <label class="f"><span>Amount</span><input id="lkAmount" inputmode="decimal" placeholder="e.g. 25" /></label>
@@ -259,7 +262,10 @@ function paneLinks(el) {
   const list = $("#lkList", el);
   [...s.links].reverse().forEach((l) => {
     const t = O.tokenInfo(l.token);
-    const url = O.payUrl(s.vault, l.id);
+    const prefKey = `oryn-hide-split:${s.vault}:${l.id}`;
+    let hideSplit = false;
+    try { hideSplit = localStorage.getItem(prefKey) === "1"; } catch {}
+    let url = O.payUrl(s.vault, l.id, { hideSplit });
     const card = document.createElement("div");
     card.className = "link";
     card.innerHTML = `
@@ -268,8 +274,10 @@ function paneLinks(el) {
         <span class="tag ${l.active ? t.tone : "off"}">${l.active ? "Active" : "Turned off"}</span>
       </div>
       <div class="url">${url}</div>
+      <label class="sub" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0 10px;cursor:pointer"><input type="checkbox" data-hide ${hideSplit ? "checked" : ""} /> Keep the split private: the payer sees the amount, not who gets what</label>
       <div class="row">
         <button class="btn small dark" type="button" data-copy>Copy link</button>
+        <a class="btn small ghost" data-wa target="_blank" rel="noopener">WhatsApp</a>
         <button class="btn small ghost" type="button" data-qr>QR code</button>
         ${navigator.share ? `<button class="btn small ghost" type="button" data-share>Share</button>` : ""}
         <a class="btn small ghost" href="${url}" target="_blank" rel="noopener">Open</a>
@@ -277,6 +285,19 @@ function paneLinks(el) {
       </div>
       <div class="qr"></div>
       <div class="note"></div>`;
+    const shareText = () => `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}. Pay with one signature, no gas: ${url}`;
+    const refreshUrl = () => {
+      url = O.payUrl(s.vault, l.id, { hideSplit });
+      $(".url", card).textContent = url;
+      $("[data-wa]", card).href = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
+      const box = $(".qr", card); box.innerHTML = ""; box.classList.remove("on");
+    };
+    $("[data-hide]", card).onchange = (e) => {
+      hideSplit = e.target.checked;
+      try { localStorage.setItem(prefKey, hideSplit ? "1" : "0"); } catch {}
+      refreshUrl();
+    };
+    $("[data-wa]", card).href = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
     $("[data-copy]", card).onclick = async (e) => { await navigator.clipboard.writeText(url); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy link"), 1400); };
     $("[data-qr]", card).onclick = async () => {
       const box = $(".qr", card);
@@ -287,14 +308,26 @@ function paneLinks(el) {
       box.classList.toggle("on");
     };
     const sh = $("[data-share]", card);
-    if (sh) sh.onclick = () => navigator.share({ title: "Pay with ORYN", text: `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}`, url }).catch(() => {});
-    $("[data-toggle]", card).onclick = async () => {
+    if (sh) sh.onclick = () => navigator.share({ title: "Pay with ORYN", text: `${l.memo || "Payment"}: ${O.fmt(l.amount, t.decimals)} ${t.symbol}`, url }).catch(() => {});    $("[data-toggle]", card).onclick = async () => {
       const ok = await run($(".note", card), "Updating link. Confirm in your wallet…",
         () => O.send({ to: s.vault, abi: O.vaultAbi, functionName: "setLinkActive", args: [BigInt(l.id), !l.active] }), "Updated.");
       if (ok) { await load(false); renderDashboard("links"); }
     };
     list.appendChild(card);
   });
+  const fill = () => {
+    const n = $("#lkNote", el);
+    const r = O.parsePayLinkSentence($("#lkSay", el).value);
+    if (!r) return note(n, "err", "I couldn't find an amount. Try \"charge 25 USAT for the logo\".");
+    const tok = O.TOKENS.find((x) => x.symbol === r.symbol) || O.TOKENS[0];
+    $("#lkToken", el).value = tok.address;
+    $("#lkAmount", el).value = r.amount;
+    $("#lkMemo", el).value = r.memo;
+    $("#lkPeriod", el).value = String(r.period);
+    note(n, "ok", `Filled in: ${r.amount} ${tok.symbol}${r.memo ? `, "${O.escapeHtml(r.memo)}"` : ""}, ${O.PERIODS[r.period].toLowerCase()}. Check it, then create the link.`);
+  };
+  $("#lkFill", el).onclick = fill;
+  $("#lkSay", el).onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); fill(); } };
   $("#lkCreate", el).onclick = async () => {
     const n = $("#lkNote", el);
     const token = $("#lkToken", el).value;

@@ -16,9 +16,12 @@
 <link rel="stylesheet" href="/assets/v2.css" />
 <style>
   body { background: var(--c-forest); min-height: 100vh; }
-  .top { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(16px, 4vw, 32px); max-width: 560px; margin: 0 auto; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px clamp(16px, 4vw, 32px); max-width: 560px; margin: 0 auto; }
   .top img { height: 28px; display: block; }
   .top a.small { color: rgba(255,255,255,0.75); font-size: 13px; text-decoration: none; }
+  .langs { display: flex; gap: 4px; }
+  .langs button { background: transparent; border: 1px solid rgba(255,255,255,.3); color: rgba(255,255,255,.8); border-radius: 999px; padding: 3px 9px; font: 500 11.5px var(--font-mono); cursor: pointer; }
+  .langs button.on { background: var(--c-yellow); color: var(--c-onyx); border-color: var(--c-yellow); }
   .card { max-width: 520px; margin: 8px auto 40px; background: var(--c-gypsum); border-radius: 28px; overflow: hidden; box-shadow: 0 40px 80px -40px rgba(0,0,0,.5); }
   @media (max-width: 552px) { .card { margin: 8px 16px 32px; } }
   .hero { padding: 28px 26px 22px; background: var(--c-yellow); color: var(--c-onyx); }
@@ -34,6 +37,8 @@
   details.agent pre { background: var(--c-onyx); color: var(--c-snow); padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
   .done { text-align: center; padding: 8px 0 4px; }
   .done .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--c-jade); display: grid; place-items: center; margin: 0 auto 12px; font-size: 30px; }
+  .done .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .shield { color: var(--c-success); font-weight: 600; }
   .foot { text-align: center; color: rgba(255,255,255,.7); font-size: 12.5px; padding-bottom: 40px; }
   .foot a { color: var(--c-yellow); }
 </style>
@@ -41,91 +46,203 @@
 <body data-page="pay">
 <div class="top">
   <a href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" /></a>
-  <a class="small" href="/vault">Get your own pay links →</a>
+  <div class="langs" id="langs" role="group" aria-label="Language">
+    <button type="button" data-lang="en">EN</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="pt">PT</button>
+  </div>
 </div>
 
-<div class="card" id="card"><div class="body empty"><span class="spin"></span>Loading this pay link…</div></div>
-<div class="foot">Settles on Celo mainnet · non-custodial · <a href="/docs">how ORYN works</a></div>
+<div class="card" id="card"><div class="body empty"><span class="spin"></span>…</div></div>
+<div class="foot" id="foot"></div>
 
 <script type="module">
 import * as O from "/assets/oryn-v2.js";
 
+// ---------- Language: English, Spanish, Portuguese (LatAm payers) ----------
+const I18N = {
+  en: {
+    loading: "Loading this pay link…", cantPay: "This link can't be paid", back: "Back to ORYN",
+    incomplete: "The link is incomplete. Ask whoever sent it for a fresh one.", notVault: "That address isn't an ORYN vault.",
+    noLink: "This pay link doesn't exist.", off: "The owner has turned this pay link off.",
+    oneoff: "One-off payment", weekly: "Weekly payment", monthly: "Monthly payment", recurring: "Recurring payment",
+    payment: "Payment", paidTo: "Paid to", vaultOf: (o) => `${o}'s vault`, fee: "Network fee", feeNone: "None, it's gasless", feeSome: "A little CELO",
+    splitHead: "Split onchain on arrival", saved: "saved", rest: "rest to owner", private: "Private to the recipient",
+    screening: "Payer screening", screenWhat: "Sanctions check (Chainalysis)",
+    connect: "Connect wallet to pay", payingFrom: "Paying from", yourBal: (s) => `Your ${s}`,
+    payGasless: (a) => `Pay ${a}, no gas`, payTransfer: "Or pay with a regular transfer", pay: (a) => `Pay ${a}`,
+    short: (need, have) => `You need ${need} and have ${have}. Top up this wallet, then reload.`,
+    screened: "Screened: not on the sanctions list", blocked: "This wallet is on a sanctions list, so ORYN can't take payment from it.",
+    agentQ: "Paying from an agent?", agentA: "This link is a standard x402 resource. Any x402 client pays it the same way:",
+    preparing: "Preparing the payment…", signIt: "Sign the payment in your wallet. It's a signature, not a transaction: you pay no gas.",
+    confirmTransfer: "Confirm the transfer in your wallet…", failed: (s) => `The payment didn't go through (HTTP ${s}). Nothing was taken.`,
+    paid: "Paid", landed: (a) => `${a} landed in the vault. ORYN's agent splits it within about 15 seconds.`,
+    receipt: "View receipt", celoscan: "Celoscan ↗", own: "Get paid like this yourself →",
+    foot: 'Settles on Celo mainnet · non-custodial · <a href="/docs">how ORYN works</a>',
+  },
+  es: {
+    loading: "Cargando este link de pago…", cantPay: "Este link no se puede pagar", back: "Volver a ORYN",
+    incomplete: "El link está incompleto. Pedile uno nuevo a quien te lo mandó.", notVault: "Esa dirección no es una bóveda de ORYN.",
+    noLink: "Este link de pago no existe.", off: "El dueño desactivó este link de pago.",
+    oneoff: "Pago único", weekly: "Pago semanal", monthly: "Pago mensual", recurring: "Pago recurrente",
+    payment: "Pago", paidTo: "Se paga a", vaultOf: (o) => `la bóveda de ${o}`, fee: "Comisión de red", feeNone: "Ninguna, sin gas", feeSome: "Un poco de CELO",
+    splitHead: "Se reparte onchain al llegar", saved: "ahorro", rest: "el resto al dueño", private: "Privado para quien cobra",
+    screening: "Control del pagador", screenWhat: "Lista de sanciones (Chainalysis)",
+    connect: "Conectá tu wallet para pagar", payingFrom: "Pagás desde", yourBal: (s) => `Tu saldo en ${s}`,
+    payGasless: (a) => `Pagar ${a}, sin gas`, payTransfer: "O pagá con una transferencia normal", pay: (a) => `Pagar ${a}`,
+    short: (need, have) => `Necesitás ${need} y tenés ${have}. Cargá esta wallet y recargá la página.`,
+    screened: "Verificado: no está en listas de sanciones", blocked: "Esta wallet figura en una lista de sanciones, así que ORYN no puede recibir su pago.",
+    agentQ: "¿Pagás desde un agente?", agentA: "Este link es un recurso x402 estándar. Cualquier cliente x402 lo paga igual:",
+    preparing: "Preparando el pago…", signIt: "Firmá el pago en tu wallet. Es una firma, no una transacción: no pagás gas.",
+    confirmTransfer: "Confirmá la transferencia en tu wallet…", failed: (s) => `El pago no se completó (HTTP ${s}). No se cobró nada.`,
+    paid: "Pagado", landed: (a) => `${a} llegaron a la bóveda. El agente de ORYN lo reparte en unos 15 segundos.`,
+    receipt: "Ver comprobante", celoscan: "Celoscan ↗", own: "Cobrá así vos también →",
+    foot: 'Se liquida en Celo mainnet · sin custodia · <a href="/docs">cómo funciona ORYN</a>',
+  },
+  pt: {
+    loading: "Carregando este link de pagamento…", cantPay: "Este link não pode ser pago", back: "Voltar ao ORYN",
+    incomplete: "O link está incompleto. Peça um novo a quem enviou.", notVault: "Esse endereço não é um cofre ORYN.",
+    noLink: "Este link de pagamento não existe.", off: "O dono desativou este link de pagamento.",
+    oneoff: "Pagamento único", weekly: "Pagamento semanal", monthly: "Pagamento mensal", recurring: "Pagamento recorrente",
+    payment: "Pagamento", paidTo: "Pago para", vaultOf: (o) => `o cofre de ${o}`, fee: "Taxa de rede", feeNone: "Nenhuma, sem gás", feeSome: "Um pouco de CELO",
+    splitHead: "Dividido onchain na chegada", saved: "poupança", rest: "o resto para o dono", private: "Privado para quem recebe",
+    screening: "Verificação do pagador", screenWhat: "Lista de sanções (Chainalysis)",
+    connect: "Conecte a carteira para pagar", payingFrom: "Pagando de", yourBal: (s) => `Seu saldo em ${s}`,
+    payGasless: (a) => `Pagar ${a}, sem gás`, payTransfer: "Ou pague com uma transferência normal", pay: (a) => `Pagar ${a}`,
+    short: (need, have) => `Você precisa de ${need} e tem ${have}. Recarregue esta carteira e atualize a página.`,
+    screened: "Verificado: fora das listas de sanções", blocked: "Esta carteira está numa lista de sanções, então o ORYN não pode receber o pagamento dela.",
+    agentQ: "Pagando de um agente?", agentA: "Este link é um recurso x402 padrão. Qualquer cliente x402 paga do mesmo jeito:",
+    preparing: "Preparando o pagamento…", signIt: "Assine o pagamento na carteira. É uma assinatura, não uma transação: você não paga gás.",
+    confirmTransfer: "Confirme a transferência na carteira…", failed: (s) => `O pagamento não foi concluído (HTTP ${s}). Nada foi cobrado.`,
+    paid: "Pago", landed: (a) => `${a} chegaram ao cofre. O agente do ORYN divide em cerca de 15 segundos.`,
+    receipt: "Ver comprovante", celoscan: "Celoscan ↗", own: "Receba assim você também →",
+    foot: 'Liquida na Celo mainnet · sem custódia · <a href="/docs">como o ORYN funciona</a>',
+  },
+};
+const q = new URLSearchParams(location.search);
+function pickLang() {
+  const asked = q.get("lang");
+  if (asked && I18N[asked]) return asked;
+  try { const saved = localStorage.getItem("oryn-lang"); if (saved && I18N[saved]) return saved; } catch {}
+  const nav = (navigator.language || "en").slice(0, 2);
+  return I18N[nav] ? nav : "en";
+}
+let lang = pickLang();
+const T = () => I18N[lang];
+
 const $ = (s, el = document) => el.querySelector(s);
 const card = $("#card");
-const q = new URLSearchParams(location.search);
 const vaultParam = q.get("v") || "";
 const idParam = q.get("l") || "";
+// The owner can share a link that keeps the split private (e.g. a subcontractor's rate). The split
+// still runs onchain exactly the same; this page just doesn't spell it out to the payer.
+const hideSplit = q.get("p") === "1";
 let link = null;
 let gasless = false; // set once the x402 service has answered its health check
+let stage = "loading"; // loading | ready | connected | done | failed
+let failMsg = "", paidTx = null, balance = null, sanctioned = null;
 
-function fail(msg) { card.innerHTML = `<div class="body"><h2>This link can't be paid</h2><p class="sub">${O.escapeHtml(msg)}</p><a class="btn ghost" href="/">Back to ORYN</a></div>`; }
-function note(kind, html) { const n = $("#payNote"); n.className = "note " + kind; n.innerHTML = kind === "wait" ? `<span class="spin"></span>${html}` : html; }
+function setLang(l) {
+  lang = l; document.documentElement.lang = l;
+  try { localStorage.setItem("oryn-lang", l); } catch {}
+  document.querySelectorAll("#langs button").forEach((b) => b.classList.toggle("on", b.dataset.lang === l));
+  $("#foot").innerHTML = T().foot;
+  redraw();
+}
+document.querySelectorAll("#langs button").forEach((b) => (b.onclick = () => setLang(b.dataset.lang)));
 
+function note(kind, html) { const n = $("#payNote"); if (!n) return; n.className = "note " + kind; n.innerHTML = kind === "wait" ? `<span class="spin"></span>${html}` : html; }
+const amt = () => `${O.fmt(link.amount, link.t.decimals)} ${link.t.symbol}`;
+
+class LinkError extends Error {}
 async function readLink() {
-  if (!O.isAddress(vaultParam) || !/^\d{1,9}$/.test(idParam)) throw new Error("The link is incomplete. Ask whoever sent it for a fresh one.");
+  if (!O.isAddress(vaultParam) || !/^\d{1,9}$/.test(idParam)) throw new LinkError("incomplete");
   const vault = O.getAddress(vaultParam);
   const id = BigInt(idParam);
   let factory;
   try { factory = await O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "factory" }); }
-  catch { throw new Error("That address isn't an ORYN vault."); }
-  if (O.v2Live() && O.getAddress(factory) !== O.getAddress(O.ORYN_V2_FACTORY)) throw new Error("That address isn't an ORYN vault.");
+  catch { throw new LinkError("notVault"); }
+  if (O.v2Live() && O.getAddress(factory) !== O.getAddress(O.ORYN_V2_FACTORY)) throw new LinkError("notVault");
   const count = await O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "linkCount" });
-  if (id >= count) throw new Error("This pay link doesn't exist.");
+  if (id >= count) throw new LinkError("noLink");
   const [raw, owner, legs, savingsBps] = await Promise.all([
     O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "getLink", args: [id] }),
     O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "owner" }),
     O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "getLegs" }),
     O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "savingsBps" }),
   ]);
-  if (!raw.active) throw new Error("The owner has turned this pay link off.");
+  if (!raw.active) throw new LinkError("off");
   return { vault, id, owner, legs, savingsBps: Number(savingsBps), ...raw, t: O.tokenInfo(raw.token) };
 }
 
-function render() {
-  const { t } = link;
+function redraw() {
+  const t = T();
+  if (stage === "loading") { card.innerHTML = `<div class="body empty"><span class="spin"></span>${t.loading}</div>`; return; }
+  if (stage === "failed") { card.innerHTML = `<div class="body"><h2>${t.cantPay}</h2><p class="sub">${O.escapeHtml(t[failMsg] || failMsg)}</p><a class="btn ghost" href="/">${t.back}</a></div>`; return; }
+  const period = { 0: t.oneoff, 604800: t.weekly, 2592000: t.monthly }[link.period] || t.recurring;
   const legsHtml = link.legs.map((l) => `<span class="tag">${O.short(l.recipient)} · ${l.bps / 100}%</span>`).join(" ")
-    + (link.savingsBps ? ` <span class="tag yellow">saved · ${link.savingsBps / 100}%</span>` : "")
-    + ` <span class="tag off">rest to owner</span>`;
+    + (link.savingsBps ? ` <span class="tag yellow">${t.saved} · ${link.savingsBps / 100}%</span>` : "")
+    + ` <span class="tag off">${t.rest}</span>`;
   card.innerHTML = `
     <div class="hero">
-      <div class="eyebrow">${O.PERIODS[link.period] || "Recurring"} payment · ${t.flag} ${t.currency}</div>
-      <div class="big">${O.fmt(link.amount, t.decimals)} <span style="font-size:.5em">${t.symbol}</span></div>
-      <div class="memo">${O.escapeHtml(link.memo || "Payment")}</div>
+      <div class="eyebrow">${period} · ${link.t.flag} ${link.t.currency}</div>
+      <div class="big">${O.fmt(link.amount, link.t.decimals)} <span style="font-size:.5em">${link.t.symbol}</span></div>
+      <div class="memo">${O.escapeHtml(link.memo || t.payment)}</div>
     </div>
-    <div class="body" id="payBody">
-      <div class="kv"><span>Paid to</span><span class="mono">${O.short(link.owner)}'s vault <a href="https://celoscan.io/address/${link.vault}" target="_blank" rel="noopener">↗</a></span></div>
-      <div class="kv"><span>Network fee</span><span>${gasless ? "None, it's gasless" : "A little CELO"}</span></div>
-      <div class="split"><div class="eyebrow" style="color:var(--c-wood);margin-bottom:8px">Split onchain on arrival</div>${legsHtml}</div>
-      <div style="margin-top:20px" id="actions"><button class="btn primary block" type="button" id="connect">Connect wallet to pay</button></div>
-      <div class="note" id="payNote"></div>
-      ${gasless ? `<details class="agent"><summary>Paying from an agent?</summary><p>This link is a standard x402 resource. Any x402 client pays it, the same way:</p><pre>POST ${O.ORYN_API}/pay/${link.vault}/${link.id}</pre></details>` : ""}
+    <div class="body" id="payBody"></div>`;
+  const body = $("#payBody");
+  if (stage === "done") {
+    const rcpt = `/receipt?tx=${paidTx || ""}&v=${link.vault}&l=${link.id}${hideSplit ? "&p=1" : ""}${lang !== "en" ? "&lang=" + lang : ""}`;
+    body.innerHTML = `<div class="done">
+      <div class="tick">✓</div>
+      <h2>${t.paid}</h2>
+      <p class="sub" style="margin:6px auto 16px">${t.landed(amt())}</p>
+      <div class="row">${paidTx ? `<a class="btn primary" href="${rcpt}">${t.receipt}</a><a class="btn ghost" href="https://celoscan.io/tx/${paidTx}" target="_blank" rel="noopener">${t.celoscan}</a>` : ""}</div>
+      <p style="margin-top:18px"><a href="/vault">${t.own}</a></p>
     </div>`;
-  $("#connect").onclick = connectAndPrepare;
+    return;
+  }
+  body.innerHTML = `
+    <div class="kv"><span>${t.paidTo}</span><span class="mono">${t.vaultOf(O.short(link.owner))} <a href="https://celoscan.io/address/${link.vault}" target="_blank" rel="noopener">↗</a></span></div>
+    <div class="kv"><span>${t.fee}</span><span>${gasless ? t.feeNone : t.feeSome}</span></div>
+    <div class="kv"><span>${t.screening}</span><span>${t.screenWhat}</span></div>
+    ${hideSplit ? `<div class="kv"><span>${t.splitHead}</span><span>${t.private}</span></div>` : `<div class="split"><div class="eyebrow" style="color:var(--c-wood);margin-bottom:8px">${t.splitHead}</div>${legsHtml}</div>`}
+    <div style="margin-top:20px" id="actions"></div>
+    <div class="note" id="payNote"></div>
+    ${gasless ? `<details class="agent"><summary>${t.agentQ}</summary><p>${t.agentA}</p><pre>POST ${O.ORYN_API}/pay/${link.vault}/${link.id}</pre></details>` : ""}`;
+  const actions = $("#actions");
+  if (stage === "ready") {
+    actions.innerHTML = `<button class="btn primary block" type="button" id="connect">${t.connect}</button>`;
+    $("#connect").onclick = connectAndPrepare;
+    return;
+  }
+  // connected
+  const enough = balance >= link.amount && sanctioned !== true;
+  actions.innerHTML = `
+    <div class="kv"><span>${t.payingFrom}</span><span class="mono">${O.short(O.account)}</span></div>
+    <div class="kv"><span>${t.yourBal(link.t.symbol)}</span><span>${O.fmt(balance, link.t.decimals)}</span></div>
+    ${sanctioned === false ? `<div class="kv"><span>${t.screening}</span><span class="shield">✓ ${t.screened}</span></div>` : ""}
+    <div style="margin-top:16px;display:grid;gap:10px">
+      ${gasless ? `<button class="btn primary block" type="button" id="payX402" ${enough ? "" : "disabled"}>${t.payGasless(amt())}</button>` : ""}
+      <button class="btn ${gasless ? "ghost" : "primary"} block" type="button" id="payTransfer" ${enough ? "" : "disabled"}>${gasless ? t.payTransfer : t.pay(amt())}</button>
+    </div>`;
+  if (sanctioned === true) note("err", t.blocked);
+  else if (balance < link.amount) note("err", t.short(amt(), `${O.fmt(balance, link.t.decimals)} ${link.t.symbol}`));
+  const x = $("#payX402"); if (x) x.onclick = payX402;
+  $("#payTransfer").onclick = payTransfer;
 }
 
 async function connectAndPrepare() {
-  try {
-    await O.connect();
-  } catch (err) { return note("err", O.escapeHtml(O.cleanError(err))); }
-  const { t } = link;
-  const bal = await O.publicClient.readContract({ address: link.token, abi: O.erc20Abi, functionName: "balanceOf", args: [O.account] });
-  const enough = bal >= link.amount;
-  $("#actions").innerHTML = `
-    <div class="kv"><span>Paying from</span><span class="mono">${O.short(O.account)}</span></div>
-    <div class="kv"><span>Your ${t.symbol}</span><span>${O.fmt(bal, t.decimals)}</span></div>
-    <div style="margin-top:16px;display:grid;gap:10px">
-      ${gasless ? `<button class="btn primary block" type="button" id="payX402" ${enough ? "" : "disabled"}>Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}, no gas</button>` : ""}
-      <button class="btn ${gasless ? "ghost" : "primary"} block" type="button" id="payTransfer" ${enough ? "" : "disabled"}>${gasless ? "Or pay with a regular transfer" : `Pay ${O.fmt(link.amount, t.decimals)} ${t.symbol}`}</button>
-    </div>`;
-  if (!enough) note("err", `You need ${O.fmt(link.amount, t.decimals)} ${t.symbol} and have ${O.fmt(bal, t.decimals)}. Top up this wallet, then reload.`);
-  const x = $("#payX402"); if (x) x.onclick = payX402;
-  $("#payTransfer").onclick = payTransfer;
+  try { await O.connect(); } catch (err) { return note("err", O.escapeHtml(O.cleanError(err))); }
+  [balance, sanctioned] = await Promise.all([
+    O.publicClient.readContract({ address: link.token, abi: O.erc20Abi, functionName: "balanceOf", args: [O.account] }),
+    O.isSanctioned(O.account),
+  ]);
+  stage = "connected"; redraw();
 }
 
 async function payX402() {
   const btn = $("#payX402"); btn.disabled = true;
   try {
-    note("wait", "Preparing the payment…");
+    note("wait", T().preparing);
     const [{ wrapFetchWithPaymentFromConfig }, { ExactEvmScheme }] = await Promise.all([
       import("https://esm.sh/@x402/fetch@2.28.0"),
       import("https://esm.sh/@x402/evm@2.28.0/exact/client"),
@@ -139,15 +256,17 @@ async function payX402() {
         allowedAssets: [{ network: "eip155:42220", asset: link.token, maxAmountPerPayment: link.amount.toString() }],
       },
     });
-    note("wait", "Sign the payment in your wallet. It's a signature, not a transaction: you pay no gas.");
+    note("wait", T().signIt);
     const res = await payFetch(`${O.ORYN_API}/pay/${link.vault}/${link.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     const header = res.headers.get("payment-response") || res.headers.get("x-payment-response");
     let settle = null;
     try { settle = header ? JSON.parse(atob(header)) : null; } catch {}
     if (!res.ok || (settle && settle.success === false)) {
-      throw new Error((settle && (settle.errorReason || settle.error)) || `The payment didn't go through (HTTP ${res.status}). Nothing was taken.`);
+      let reason = settle && (settle.errorReason || settle.error);
+      if (!reason) { try { reason = (await res.json()).error; } catch {} }
+      throw new Error(reason || T().failed(res.status));
     }
-    done(settle && settle.transaction);
+    paidTx = settle && settle.transaction; stage = "done"; redraw();
   } catch (err) {
     note("err", O.escapeHtml(O.cleanError(err)));
     btn.disabled = false;
@@ -157,30 +276,23 @@ async function payX402() {
 async function payTransfer() {
   const btn = $("#payTransfer"); btn.disabled = true;
   try {
-    note("wait", "Confirm the transfer in your wallet…");
+    note("wait", T().confirmTransfer);
     const { hash } = await O.send({ to: link.token, abi: O.erc20Abi, functionName: "transfer", args: [link.vault, link.amount] });
-    done(hash);
+    paidTx = hash; stage = "done"; redraw();
   } catch (err) {
     note("err", O.escapeHtml(O.cleanError(err)));
     btn.disabled = false;
   }
 }
 
-function done(tx) {
-  const { t } = link;
-  $("#payBody").innerHTML = `<div class="done">
-    <div class="tick">✓</div>
-    <h2>Paid</h2>
-    <p class="sub" style="margin:6px auto 16px">${O.fmt(link.amount, t.decimals)} ${t.symbol} landed in the vault. ORYN's agent splits it within about 15 seconds.</p>
-    ${tx ? `<a class="btn ghost" href="https://celoscan.io/tx/${tx}" target="_blank" rel="noopener">View on Celoscan ↗</a>` : ""}
-    <p style="margin-top:18px"><a href="/vault">Get paid like this yourself →</a></p>
-  </div>`;
-}
-
+setLang(lang);
 try {
   [link, gasless] = await Promise.all([readLink(), O.apiUp()]);
-  render();
-} catch (err) { fail(O.cleanError(err)); }
+  stage = "ready";
+} catch (err) {
+  stage = "failed"; failMsg = err instanceof LinkError ? err.message : O.cleanError(err);
+}
+redraw();
 </script>
 </body>
 </html>

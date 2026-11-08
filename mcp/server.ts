@@ -48,6 +48,9 @@ const vaultAbi = parseAbi([
 ]);
 const factoryAbi = parseAbi(["function vaultOf(address) view returns (address)", "function vaultCount() view returns (uint256)"]);
 const erc20Abi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+// Chainalysis' onchain sanctions oracle on Celo mainnet: an agent won't pay a sanctioned vault owner.
+const SANCTIONS_ORACLE: Address = "0x40C57923924B5c5c5455c48D93317139ADDaC8fb";
+const sanctionsAbi = parseAbi(["function isSanctioned(address) view returns (bool)"]);
 
 const transport = fallback(["https://forno.celo.org", "https://celo.drpc.org"].map((u) => http(u, { timeout: 20_000, retryCount: 2 })));
 const publicClient = createPublicClient({ chain: celo, transport });
@@ -178,6 +181,9 @@ server.registerTool(
       const token = tokenByAddress(link.token);
       if (!token) return fail(`This link uses a token ORYN can't settle over x402: ${link.token}`);
       if (link.amount > parseUnits(args.maxAmount, token.decimals)) return fail(`The link asks for ${fmt(link.amount, link.token)}, more than your maxAmount of ${args.maxAmount} ${token.symbol}. Nothing was paid.`);
+      const owner = await publicClient.readContract({ address: vault, abi: vaultAbi, functionName: "owner" });
+      const flagged = await publicClient.readContract({ address: SANCTIONS_ORACLE, abi: sanctionsAbi, functionName: "isSanctioned", args: [owner] }).catch(() => false);
+      if (flagged) return fail("The owner of this vault is on a sanctions list. Nothing was paid.");
       const balance = await publicClient.readContract({ address: link.token, abi: erc20Abi, functionName: "balanceOf", args: [payer.address] });
       if (balance < link.amount) return fail(`The payer wallet ${payer.address} holds ${fmt(balance, link.token)} and the link needs ${fmt(link.amount, link.token)}.`);
 

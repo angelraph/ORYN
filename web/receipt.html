@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORYN: Receipt</title>
+<meta name="description" content="A verifiable ORYN payment receipt, read from Celo mainnet." />
+<meta property="og:image" content="https://oryn.click/assets/oryn-og.jpg" />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/v2.css" />
+<style>
+  body { background: var(--c-forest); min-height: 100vh; }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(16px, 4vw, 32px); max-width: 600px; margin: 0 auto; }
+  .top img { height: 28px; display: block; }
+  .top button { background: transparent; border: 1px solid rgba(255,255,255,.35); color: var(--c-snow); border-radius: 999px; padding: 6px 14px; font: 500 13px var(--font-ui); cursor: pointer; }
+  .sheet { max-width: 560px; margin: 8px auto 40px; background: var(--c-snow); border-radius: 24px; padding: 30px 28px; box-shadow: 0 40px 80px -40px rgba(0,0,0,.5); }
+  @media (max-width: 592px) { .sheet { margin: 8px 16px 32px; padding: 24px 20px; } }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 18px; }
+  .head h1 { font-family: var(--font-display); font-weight: 300; font-size: 30px; margin: 0; letter-spacing: -0.02em; }
+  .stamp { background: var(--c-jade); border-radius: 999px; padding: 5px 12px; font: 600 12px var(--font-mono); white-space: nowrap; }
+  .stamp.wait { background: var(--c-yellow); }
+  .amount { font-family: var(--font-display); font-weight: 300; font-size: 54px; letter-spacing: -0.03em; line-height: 1; margin: 22px 0 4px; }
+  .memo { color: var(--c-wood); margin-bottom: 18px; }
+  .kv { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .kv span:first-child { color: var(--c-wood); flex-shrink: 0; }
+  .kv span:last-child { text-align: right; overflow-wrap: anywhere; }
+  h3 { font: 600 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--c-wood); margin: 24px 0 6px; }
+  .fine { font-size: 12.5px; color: var(--c-wood); margin-top: 22px; line-height: 1.55; }
+  .foot { text-align: center; color: rgba(255,255,255,.7); font-size: 12.5px; padding-bottom: 40px; }
+  .foot a { color: var(--c-yellow); }
+  @media print {
+    body { background: #fff; } .top button, .foot { display: none; }
+    .sheet { box-shadow: none; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="/" aria-label="ORYN home"><img src="/assets/oryn-logo-light.png" alt="ORYN" width="86" height="28" /></a>
+  <button type="button" onclick="window.print()" id="printBtn">Print or save PDF</button>
+</div>
+<div class="sheet" id="sheet"><div class="empty"><span class="spin"></span> Reading the payment from Celo…</div></div>
+<div class="foot">Every line on this receipt is read from Celo mainnet · <a href="/proof">all payments</a></div>
+
+<script type="module">
+import * as O from "/assets/oryn-v2.js";
+const q = new URLSearchParams(location.search);
+const L = {
+  en: { title: "Receipt", paid: "Paid", splitting: "Splitting", memo: "Payment", payer: "Paid by", vault: "Paid into", link: "Pay link", when: "Date", method: "Method", x402: "x402, gasless (signed by the payer, settled by Celo's facilitator)", direct: "Direct transfer", settle: "Settlement", splitTx: "Split transaction", privateSplit: "The recipient keeps the details of this split private. It ran onchain as set.", splitH: "Split by ORYN's agent", savings: "Kept in vault (savings and owner)", pendingSplit: "The agent splits payments within about 15 seconds. Refresh to see it.", fine: "This receipt is generated from public onchain data and can be re-checked by anyone at any time. ORYN never held these funds: they went straight into the owner's own vault contract.", notFound: "No payment into an ORYN vault was found in this transaction.", print: "Print or save PDF" },
+  es: { title: "Comprobante", paid: "Pagado", splitting: "Repartiendo", memo: "Pago", payer: "Pagó", vault: "Se pagó a", link: "Link de pago", when: "Fecha", method: "Método", x402: "x402, sin gas (firmado por quien paga, liquidado por el facilitador de Celo)", direct: "Transferencia directa", settle: "Liquidación", splitTx: "Transacción del reparto", privateSplit: "Quien cobra mantiene privado el detalle de este reparto. Se ejecutó onchain como estaba configurado.", splitH: "Reparto del agente de ORYN", savings: "Queda en la bóveda (ahorro y dueño)", pendingSplit: "El agente reparte los pagos en unos 15 segundos. Recargá para verlo.", fine: "Este comprobante se genera con datos públicos onchain y cualquiera puede verificarlo en cualquier momento. ORYN nunca tuvo estos fondos: fueron directo a la bóveda del dueño.", notFound: "No se encontró un pago a una bóveda de ORYN en esta transacción.", print: "Imprimir o guardar PDF" },
+  pt: { title: "Comprovante", paid: "Pago", splitting: "Dividindo", memo: "Pagamento", payer: "Pago por", vault: "Pago para", link: "Link de pagamento", when: "Data", method: "Método", x402: "x402, sem gás (assinado por quem paga, liquidado pelo facilitador da Celo)", direct: "Transferência direta", settle: "Liquidação", splitTx: "Transação da divisão", privateSplit: "Quem recebe mantém privado o detalhe desta divisão. Ela rodou onchain como configurada.", splitH: "Divisão do agente do ORYN", savings: "Fica no cofre (poupança e dono)", pendingSplit: "O agente divide os pagamentos em cerca de 15 segundos. Atualize para ver.", fine: "Este comprovante é gerado com dados públicos onchain e qualquer pessoa pode verificá-lo a qualquer momento. O ORYN nunca teve esses fundos: foram direto para o cofre do dono.", notFound: "Nenhum pagamento para um cofre ORYN foi encontrado nesta transação.", print: "Imprimir ou salvar PDF" },
+};
+const lang = L[q.get("lang")] ? q.get("lang") : (L[(navigator.language || "en").slice(0, 2)] ? (navigator.language || "en").slice(0, 2) : "en");
+const t = L[lang]; document.documentElement.lang = lang; document.getElementById("printBtn").textContent = t.print;
+const sheet = document.getElementById("sheet");
+const BS = "https://celo.blockscout.com/api/v2";
+const SPLIT = new Set(["distribute", "releaseConversion", "0x63453ae1", "0x5188eea5"]);
+const scan = (k, v) => `https://celoscan.io/${k}/${v}`;
+const amountOf = (x) => Number(x.total.value) / 10 ** Number(x.total.decimals || x.token.decimals);
+const fmtN = (n) => n.toLocaleString("en-US", { maximumFractionDigits: n < 1 ? 6 : 2 });
+
+async function load() {
+  const tx = (q.get("tx") || "").trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) throw new Error(t.notFound);
+  const [txInfo, transfers] = await Promise.all([
+    fetch(`${BS}/transactions/${tx}`).then((r) => r.json()),
+    fetch(`${BS}/transactions/${tx}/token-transfers`).then((r) => r.json()),
+  ]);
+  // Find the transfer that landed in an ORYN v2 vault.
+  let pay = null, vault = null;
+  for (const x of transfers.items || []) {
+    const to = x.to.hash;
+    try {
+      const f = await O.publicClient.readContract({ address: to, abi: O.vaultAbi, functionName: "factory" });
+      if (O.getAddress(f) === O.getAddress(O.ORYN_V2_FACTORY)) { pay = x; vault = O.getAddress(to); break; }
+    } catch {}
+  }
+  if (!pay) throw new Error(t.notFound);
+  const payer = pay.from.hash;
+  const x402 = txInfo.from.hash.toLowerCase() !== payer.toLowerCase();
+  const sym = pay.token.symbol, amount = amountOf(pay);
+
+  // Pay link (optional, from the URL) for the memo.
+  let memo = "", linkId = q.get("l");
+  if (linkId !== null && /^\d+$/.test(linkId)) {
+    try { memo = (await O.publicClient.readContract({ address: vault, abi: O.vaultAbi, functionName: "getLink", args: [BigInt(linkId)] })).memo; } catch {}
+  }
+
+  // The agent's split: the first split transfers of this token out of the vault after this payment.
+  const outs = await fetch(`${BS}/addresses/${vault}/token-transfers?filter=from`).then((r) => r.json());
+  const later = (outs.items || []).filter((x) => SPLIT.has(x.method) && x.token.address_hash.toLowerCase() === pay.token.address_hash.toLowerCase() && x.block_number >= pay.block_number)
+    .sort((a, b) => a.block_number - b.block_number);
+  const firstTx = later[0]?.transaction_hash;
+  const split = later.filter((x) => x.transaction_hash === firstTx);
+  const splitTotal = split.reduce((s, x) => s + amountOf(x), 0);
+
+  const when = new Date(txInfo.timestamp || pay.timestamp).toLocaleString(lang === "en" ? "en-GB" : lang, { dateStyle: "long", timeStyle: "short" });
+  sheet.innerHTML = `
+    <div class="head"><div><div class="eyebrow" style="color:var(--c-wood)">ORYN</div><h1>${t.title}</h1></div><span class="stamp ${split.length ? "" : "wait"}">${split.length ? "✓ " + t.paid : t.splitting}</span></div>
+    <div class="amount">${fmtN(amount)} <span style="font-size:.45em">${O.escapeHtml(sym)}</span></div>
+    <div class="memo">${O.escapeHtml(memo || t.memo)}</div>
+    <div class="kv"><span>${t.when}</span><span>${when}</span></div>
+    <div class="kv"><span>${t.payer}</span><span class="mono"><a href="${scan("address", payer)}" target="_blank" rel="noopener">${payer}</a></span></div>
+    <div class="kv"><span>${t.vault}</span><span class="mono"><a href="${scan("address", vault)}" target="_blank" rel="noopener">${vault}</a></span></div>
+    ${linkId !== null ? `<div class="kv"><span>${t.link}</span><span><a href="/pay?v=${vault}&l=${O.escapeHtml(linkId)}">#${O.escapeHtml(linkId)}</a></span></div>` : ""}
+    <div class="kv"><span>${t.method}</span><span>${x402 ? t.x402 : t.direct}</span></div>
+    <div class="kv"><span>${t.settle}</span><span class="mono"><a href="${scan("tx", tx)}" target="_blank" rel="noopener">${O.short(tx)} ↗</a></span></div>
+    <h3>${t.splitH}</h3>
+    ${q.get("p") === "1" ? `<p class="sub">${t.privateSplit}</p>` : split.length ? split.map((x) => `<div class="kv"><span class="mono"><a href="${scan("address", x.to.hash)}" target="_blank" rel="noopener">${O.short(x.to.hash)}</a></span><span>${fmtN(amountOf(x))} ${O.escapeHtml(x.token.symbol)}</span></div>`).join("")
+      + `<div class="kv"><span>${t.savings}</span><span>${fmtN(Math.max(0, amount - splitTotal))} ${O.escapeHtml(sym)}</span></div>`
+      + `<div class="kv"><span>${t.splitTx}</span><span class="mono"><a href="${scan("tx", firstTx)}" target="_blank" rel="noopener">${O.short(firstTx)} ↗</a></span></div>`
+      : `<p class="sub">${t.pendingSplit}</p>`}
+    <p class="fine">${t.fine}</p>`;
+}
+load().catch((e) => { sheet.innerHTML = `<p>${O.escapeHtml(e.message || String(e))}</p>`; });
+</script>
+</body>
+</html>

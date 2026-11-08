@@ -96,6 +96,15 @@ export function fmt(amount, decimals, max = 2) {
 }
 export function fmtToken(amount, tokenAddr) { const t = tokenInfo(tokenAddr); return `${fmt(amount, t.decimals)} ${t.symbol}`; }
 export const PERIODS = { 0: "One-off", 604800: "Weekly", 2592000: "Monthly" };
+
+// Chainalysis' onchain sanctions oracle, live on Celo mainnet. Free to read, no API key.
+export const SANCTIONS_ORACLE = "0x40C57923924B5c5c5455c48D93317139ADDaC8fb";
+/** true if the address is on the sanctions list, false if clear, null if the oracle couldn't be read. */
+export async function isSanctioned(address) {
+  try {
+    return await publicClient.readContract({ address: SANCTIONS_ORACLE, abi: parseAbi(["function isSanctioned(address) view returns (bool)"]), functionName: "isSanctioned", args: [address] });
+  } catch { return null; }
+}
 export function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
@@ -205,6 +214,35 @@ export async function recentActivity(vault, { blocks = 60_000n } = {}) {
 
 // Shared links always point at the public domain, never at a preview or local origin.
 export const SITE = "https://oryn.click";
-export function payUrl(vault, id) {
-  return `${SITE}/pay?v=${vault}&l=${id}`;
+export function payUrl(vault, id, { hideSplit = false } = {}) {
+  return `${SITE}/pay?v=${vault}&l=${id}${hideSplit ? "&p=1" : ""}`;
+}
+
+/** Turns one sentence into pay link fields, in English, Spanish or Portuguese.
+ * "charge Marco 25 USAT for the logo, monthly" · "cobrar 4500 pesos pizza" · "cobrar 30 reais pelo design semanal".
+ * Deterministic: no model ever touches the amount. Returns null if it can't find an amount. */
+export function parsePayLinkSentence(text) {
+  const s = String(text || "").trim();
+  const m = s.match(/(\d{1,3}(?:[.,\s]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)/);
+  if (!m) return null;
+  let raw = m[1].replace(/\s/g, "");
+  // "4.500" / "1,250.50" / "12,50": treat the last separator as decimal only if 1-2 digits follow it.
+  const last = Math.max(raw.lastIndexOf("."), raw.lastIndexOf(","));
+  raw = last >= 0 && raw.length - last - 1 <= 2 ? raw.slice(0, last).replace(/[.,]/g, "") + "." + raw.slice(last + 1) : raw.replace(/[.,]/g, "");
+  const lower = s.toLowerCase();
+  // First match wins; dollars (USA₮) are the default.
+  const pick = [
+    [/\busdc\b/, "USDC"], [/\busdt\b|usd₮|tether/, "USDT"], [/\busat\b|usa₮/, "USAT"],
+    [/\bwbrl\b|\bbrl\b|\breais\b|\breal\b/, "wBRL"], [/\bwcop\b|\bcop\b|colombian/, "wCOP"], [/\bwars\b|\bars\b|\bpesos?\b/, "wARS"],
+  ];
+  const symbol = (pick.find(([re]) => re.test(lower)) || [null, "USAT"])[1];
+  const period = /month|mensual|mensal|por mes|per month/.test(lower) ? 2592000 : /week|semanal|por semana|per week/.test(lower) ? 604800 : 0;
+  // Memo: words after for/por/para/pelo/pela, else what's left once the verb, amount, currency and period go.
+  let memo = (s.match(/\b(?:for|por|para|pelo|pela|pel[oa]s)\s+(.+)$/i) || [])[1] || s.replace(m[0], " ");
+  memo = memo
+    .replace(/\b(charge|bill|invoice|request|cobrar|cobra|cobrá|cobre|pedir|factura(r)?|send|me)\b/gi, " ")
+    .replace(/\b(usat|usa₮|usdc|usdt|usd₮|usd|dollars?|d[oó]lares?|wars|ars|pesos?|wbrl|brl|reais|real|wcop|cop|argentinos?|colombianos?)\b/gi, " ")
+    .replace(/\b(monthly|weekly|one-?off|mensual|mensal|semanal|every (month|week)|por (mes|semana)|per (month|week))\b/gi, " ")
+    .replace(/\$/g, " ").replace(/[,;]\s*$/g, "").replace(/\s+/g, " ").replace(/^[\s,.-]+|[\s,.-]+$/g, "");
+  return { symbol, amount: raw, period, memo: memo.slice(0, 80) };
 }
