@@ -337,8 +337,8 @@
       <h2 class="big reveal d1">Real money,<br />really moving.</h2>
       <div class="stats" id="stats">
         <div class="stat reveal d1"><div class="v"><span data-count="vaults">0</span></div><div class="k mono">Vaults on mainnet</div></div>
-        <div class="stat reveal d2"><div class="v"><span data-count="deposited">0</span><small>cUSD</small></div><div class="k mono">Received across all vaults</div></div>
-        <div class="stat reveal d3"><div class="v"><span data-count="distributed">0</span><small>cUSD</small></div><div class="k mono">Paid out by the agent</div></div>
+        <div class="stat reveal d2"><div class="v"><span data-count="deposited">0</span><small>USD</small></div><div class="k mono">Received across all vaults</div></div>
+        <div class="stat reveal d3"><div class="v"><span data-count="distributed">0</span><small>USD</small></div><div class="k mono">Split by the agent</div></div>
       </div>
     </div>
   </section>
@@ -610,6 +610,37 @@
     })(start);
   }
 
+  const FACTORY_V2 = "0x229b68DbAC7d53497eAd2981f95d5dF2cE9fFA50";
+  // USA₮, USDC, USD₮ on Celo (6 decimals), counted 1:1 as USD.
+  const USD_TOKENS = new Set(["0xd2ab3c9a02dbbab236bfec45d1d755df4267f771", "0xceba9300f2b948710d2653dd7b07f33a8b32118c", "0x48065fbbe25f71c9282ddf5e1cd6d6a887483d5e"]);
+  // Blockscout returns either the decoded name or the raw selector.
+  const AGENT_METHODS = new Set(["distribute", "releaseConversion", "0x63453ae1", "0x5188eea5"]);
+  async function transfers(vault, filter) {
+    const out = []; let next = "";
+    for (let page = 0; page < 10; page++) {
+      const res = await fetch(`https://celo.blockscout.com/api/v2/addresses/${vault}/token-transfers?filter=${filter}${next}`);
+      if (!res.ok) throw new Error("blockscout " + res.status);
+      const json = await res.json();
+      out.push(...json.items);
+      if (!json.next_page_params) break;
+      next = "&" + new URLSearchParams(json.next_page_params).toString();
+    }
+    return out;
+  }
+  async function loadV2Stats() {
+    const n = await ethCallPublic(FACTORY_V2, "0x" + SELECTOR_VAULT_COUNT);
+    const vaults = [];
+    for (let i = 0n; i < n; i++) vaults.push(addressFromUint256(await ethCallPublic(FACTORY_V2, "0x" + SELECTOR_ALL_VAULTS + padHex(i.toString(16), 32))));
+    let inUsd = 0, outUsd = 0;
+    const usd = (t) => USD_TOKENS.has(t.token.address_hash ? t.token.address_hash.toLowerCase() : (t.token.address || "").toLowerCase()) ? Number(t.total.value) / 1e6 : 0;
+    await Promise.all(vaults.map(async (v) => {
+      const [ins, outs] = await Promise.all([transfers(v, "to"), transfers(v, "from")]);
+      for (const t of ins) inUsd += usd(t);
+      for (const t of outs) if (AGENT_METHODS.has(t.method)) outUsd += usd(t);
+    }));
+    return { vaults: Number(n), inUsd, outUsd };
+  }
+
   let statsData = null, statsVisible = false;
   function renderStats() {
     if (!statsData || !statsVisible) return;
@@ -640,10 +671,12 @@
         if (r.status !== "fulfilled") continue;
         deposited += r.value[0]; distributed += r.value[1];
       }
+      // v2 vaults: USD stablecoins in, and what the agent split out (distribute / releaseConversion).
+      const v2 = await loadV2Stats().catch(() => ({ vaults: 0, inUsd: 0, outUsd: 0 }));
       statsData = {
-        vaults: Number(count),
-        deposited: Number(formatUnitsDecimal(deposited, 18)),
-        distributed: Number(formatUnitsDecimal(distributed, 18)),
+        vaults: Number(count) + v2.vaults,
+        deposited: Number(formatUnitsDecimal(deposited, 18)) + v2.inUsd,
+        distributed: Number(formatUnitsDecimal(distributed, 18)) + v2.outUsd,
       };
       renderStats();
     } catch {
