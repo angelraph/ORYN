@@ -38,6 +38,11 @@ Your client opens oryn.click/pay, sees exactly how their payment will be split, 
    - x402 settlement (relayed by Celo's facilitator): https://celoscan.io/tx/0xb08a80a92c880a6f3f836b873366ec99d35b448608d9fb800ad2f858fa75ce5c
    - Agent split, 0.9 USA₮ out, tagged: https://celoscan.io/tx/0x10c0c986d104ff581c061017d8d20bbbc375f5249615c9ec9fab33c4350cbede
 
+2. 1 USA₮ from 0x7B864FB3aA6DDAE51c0A5242F4fc50Cf7866D1D0. Active on Celo since March 2023; funded for this payment through the Relay bridge and USDT/Uniswap swaps, with no link to our wallets.
+3. 1 USA₮ from 0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02. A new Celo user: first activity on 8 Nov 2026, funded on their own by bridging CELO in through Relay and swapping on Uniswap, with no link to our wallets.
+
+Every one of these was settled gasless over x402 by Celo's facilitator and split by ORYN's agent in a tagged transaction; all of them, with their settlement and split links, are on https://oryn.click/proof.
+
 **Our own mainnet test (not counted as user activity):** 2 USA₮ from 0x1F8eb41C…7A49. That wallet was funded from our side, so we list it only as an end-to-end test. Settlement https://celoscan.io/tx/0x52557d71a44b6422ab7a3df16c5b0f395d9e2ba85dcfa18160433b9af9729e67, then the agent's tagged split 9 blocks later https://celoscan.io/tx/0x6c990c2e6505f9cdd6f5ee63a46cb5b8c2d700f7760f0c37e9c34fafeba05f28.
 
 Reproduce: `npx tsx scripts/vaultPayments.ts 0x1b250e0933E441616Dd81977eF31eC7e2Fff51Bb`
