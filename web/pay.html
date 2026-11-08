@@ -130,7 +130,15 @@ async function payX402() {
       import("https://esm.sh/@x402/fetch@2.28.0"),
       import("https://esm.sh/@x402/evm@2.28.0/exact/client"),
     ]);
-    const payFetch = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: "eip155:42220", client: new ExactEvmScheme(O.x402Signer()) }] });
+    // The x402 client caps payments at $1 by default. Cap it at exactly this link's amount
+    // (atomic units, link token only) so the payer can never sign for more than the page shows.
+    const payFetch = wrapFetchWithPaymentFromConfig(fetch, {
+      schemes: [{ network: "eip155:42220", client: new ExactEvmScheme(O.x402Signer()) }],
+      spendControls: {
+        maxAmountPerPayment: false,
+        allowedAssets: [{ network: "eip155:42220", asset: link.token, maxAmountPerPayment: link.amount.toString() }],
+      },
+    });
     note("wait", "Sign the payment in your wallet. It's a signature, not a transaction: you pay no gas.");
     const res = await payFetch(`${O.ORYN_API}/pay/${link.vault}/${link.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     const header = res.headers.get("payment-response") || res.headers.get("x-payment-response");
