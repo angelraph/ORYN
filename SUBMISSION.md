@@ -40,6 +40,7 @@ Your client opens oryn.click/pay, sees exactly how their payment will be split, 
 
 2. 1 USA₮ from 0x7B864FB3aA6DDAE51c0A5242F4fc50Cf7866D1D0. Active on Celo since March 2023; funded for this payment through the Relay bridge and USDT/Uniswap swaps, with no link to our wallets.
 3. 1 USA₮ from 0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02. A new Celo user: first activity on 8 Nov 2026, funded on their own by bridging CELO in through Relay and swapping on Uniswap, with no link to our wallets.
+4. 1 USA₮ from 0xCd51D36AbA0C7E826439B0696FEa74255ab44A00. Active on Celo since July 2023, no link to our wallets. Paid, then created its own ORYN vault (0xf5c31789021b6800947693af3ef91e3030d7da79) the same morning. Settlement https://celoscan.io/tx/0x4fc55e56781548152efe60a359148d2faca3915af93934e0715565fce4af42d7, split https://celoscan.io/tx/0x11dd846cc2739166d8cfc5a9e4a6c49937ccce5af421ec26d6a875b3b86a2651, vault creation https://celoscan.io/tx/0xb5e15a16cfdd5fb342b07f04cc6d01bb7ae4bc8f0bf683a20f0c70a040c214a8
 
 Every one of these was settled gasless over x402 by Celo's facilitator and split by ORYN's agent in a tagged transaction; all of them, with their settlement and split links, are on https://oryn.click/proof.
 
